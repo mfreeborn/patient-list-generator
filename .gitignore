@@ -1,0 +1,9 @@
+creds.py
+test.py
+.venv/
+.vscode/
+.git/
+__pycache__/
+*.doc
+*.docm
+*.docx
