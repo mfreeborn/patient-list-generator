@@ -1,4 +1,5 @@
 import datetime
+import re
 from collections import defaultdict
 
 from docx.table import _Row
@@ -9,13 +10,15 @@ from enums import Ward
 class PatientList:
     def __init__(self, home_ward: Ward):
         self.home_ward: Ward = home_ward
-        self._patient_list: list = []
+        # a mapping of {nhs_number: Patient}
+        self._patient_mapping: dict = {}
 
     def append(self, patient: "Patient") -> None:
-        self._patient_list.append(patient)
+        self._patient_mapping[patient.nhs_number] = patient
 
     def extend(self, patients: list) -> None:
-        self._patient_list.extend(patients)
+        for pt in patients:
+            self.append(pt)
 
     def sort(self) -> None:
         """Sort the patient list in place.
@@ -24,36 +27,55 @@ class PatientList:
         Sorts the outlier wards alphabetically.
         Sort the patients within each ward by bed.
         """
+        sorted_dict = {}
         grouped_dict = defaultdict(list)
-        sorted_list = []
+        # create a mapping of {ward: [Patient]}
         for pt in self:
             grouped_dict[pt.location.ward].append(pt)
 
+        # sort the patients by bed on a per-ward basis
         for ward, pts in grouped_dict.items():
             grouped_dict[ward] = sorted(pts, key=lambda pt: pt.location._bed_sort)
 
-        sorted_list.extend(grouped_dict.pop(self.home_ward, []))
+        # populate the new list with the Home Ward patients first
+        for pt in grouped_dict.pop(self.home_ward, []):
+            sorted_dict[pt.nhs_number] = pt
 
-        for key in sorted(grouped_dict.keys(), key=lambda k: k.value):
-            sorted_list.extend(grouped_dict[key])
+        # then populate the new list with the outlier patients sorted by ward alphabetically
+        for ward in sorted(grouped_dict.keys(), key=lambda k: k.value):
+            for pt in grouped_dict[ward]:
+                sorted_dict[pt.nhs_number] = pt
 
-        self._patient_list = sorted_list
+        self._patient_mapping = sorted_dict
 
     @property
     def patients(self):
-        return self._patient_list
+        return list(self._patient_mapping.values())
 
     @patients.setter
-    def patients(self):
-        raise AttributeError(f"{self.__class__.__name__} is a read-only property.")
+    def patients(self, value):
+        raise AttributeError(
+            f"{self.__class__.__name__}.patients is a read-only property."
+        )
+
+    def __getitem__(self, key: str) -> "Patient":
+        """Return a Patient from the list with a given NHS number."""
+        try:
+            return self._patient_mapping[key]
+        except KeyError:
+            raise KeyError(f"No patient with the NHS number '{key}' found in the list")
+
+    def __contains__(self, key):
+        """Assert whether a given patient (where key == NHS number) is in the list."""
+        return key in self._patient_mapping
 
     def __iter__(self):
-        return iter(self._patient_list)
+        return iter(self._patient_mapping.values())
 
     def __repr__(self):
         return (
             f"<{self.__class__.__name__}(home_ward={self.home_ward.value}, "
-            f"length={len(self._patient_list)})>"
+            f"length={len(self._patient_mapping)})>"
         )
 
 
@@ -96,44 +118,16 @@ class Location:
     def is_sideroom(self) -> bool:
         return "SR" in self.bay
 
-    @classmethod
-    def from_table_cell(cls, cell_contents: str, ward: str) -> "Location":
-        cell_contents = cell_contents.strip()
-        ward = Ward(ward)
-
-        # Fortescue has a different bed-naming convention, so handle it specifically
-        if ward == Ward.FORTESCUE:
-            if "sr" in cell_contents.lower():
-                bay_colour = cell_contents.split()[1]
-                bed_num = "01"
-                bay = f"FORX{bay_colour}BAY"
-            else:
-                bay_colour = cell_contents.split()[0]
-                bed_num = cell_contents.split()[1]
-                bay = f"FOR{bay_colour}RM"
-
-        else:
-            room_type = "BAY"
-            bay_num = cell_contents[0]
-            bed_num = cell_contents[1]
-            if "sr" in cell_contents.lower():
-                room_type = "SR"
-                bay_num = cell_contents.replace("SR", "")
-                bed_num = "01"
-
-            # should be something like "GLOBAY02" or "GLOSR17"
-            bay = f"{ward.value.upper()[:3]}{room_type}{int(bay_num):02d}"
-
-        return cls(ward=ward, bay=bay, bed=f"Bed{bed_num}")
-
 
 class Patient:
+    nhs_num_pattern = re.compile(r"\d{3}\s?\d{3}\s?\d{4}")
+
     def __init__(
         self,
-        given_name: str,
-        surname: str,
-        dob: datetime.date,
         nhs_number: str,
+        given_name: str = None,
+        surname: str = None,
+        dob: datetime.date = None,
         location: Location = None,
         reason_for_admission: str = None,
         jobs: str = None,
@@ -142,10 +136,12 @@ class Patient:
         tta: str = None,
         bloods: str = None,
     ):
+
+        self._nhs_number: str = nhs_number.replace(" ", "")
+
         self.given_name: str = given_name
         self.surname: str = surname
         self.dob: datetime.date = dob
-        self.nhs_number: str = nhs_number
 
         self.location: Location = location
 
@@ -159,7 +155,14 @@ class Patient:
         self.is_new = False
 
     @property
+    def nhs_number(self):
+        return f"{self._nhs_number[:3]} {self._nhs_number[3:6]} {self._nhs_number[6:]}"
+
+    @property
     def age(self) -> str:
+        if self.dob is None:
+            return ""
+
         today = datetime.date.today()
         return str(
             today.year
@@ -169,11 +172,17 @@ class Patient:
 
     @property
     def full_name(self) -> str:
+        if self.given_name is None or self.surname is None:
+            return "UNKNOWN"
+
         return f"{self.given_name} {self.surname}"
 
     @property
     def patient_details(self):
         """Return the patient detail's in the correct format for the patient list."""
+        if not all([self.surname, self.given_name, self.dob, self.nhs_number]):
+            return "UNKOWN"
+
         return (
             f"{self.surname.upper()}, {self.given_name.title()}\n"
             f"{self.dob.strftime('%d/%m/%Y')} ({self.age} Yrs)\n"
@@ -182,10 +191,11 @@ class Patient:
 
     @property
     def bed(self):
-        return self.location.bed
+        if self.location:
+            return self.location.bed
 
     @classmethod
-    def from_table_row(cls, row: _Row, ward: str) -> "Patient":
+    def from_table_row(cls, row: _Row) -> "Patient":
         """Return a Patient object from the information held in a table row.
 
         Expects the row to be in the following format:
@@ -203,15 +213,24 @@ class Patient:
             SMITH, John
             01/01/1975 (45 Yrs)
             123 456 7890
+
+        The only identifier that we try and parse from the table is the NHS
+        number. The goal is to have as small a requirement of a "correctly"
+        formatted list as possible in order to minimise parsing errors when
+        trying to extract a patient from the Word list.
         """
+
         pt_details = row.cells[1].text.strip()
-        name, dob_age, nhs_number = pt_details.split("\n")
+        nhs_number = cls.nhs_num_pattern.search(pt_details)
 
-        given_name = name.split(", ")[1]
-        surname = name.split(", ")[0].title()
-        dob = datetime.datetime.strptime(dob_age.split()[0], "%d/%m/%Y").date()
-
-        location = Location.from_table_cell(row.cells[0].text, ward)
+        if nhs_number is None:
+            # no match found by the regex
+            raise Exception(
+                f"No NHS number found in the table cell with the following contents: {pt_details}"
+            )
+        else:
+            # retrieves the NHS number from the successful regex match
+            nhs_number = nhs_number[0]
 
         issues = row.cells[2].text.strip()
         jobs = row.cells[3].text.strip()
@@ -221,11 +240,7 @@ class Patient:
         bloods = row.cells[7].text.strip()
 
         return cls(
-            given_name=given_name,
-            surname=surname,
-            dob=dob,
             nhs_number=nhs_number,
-            location=location,
             reason_for_admission=issues,
             jobs=jobs,
             edd=edd,
@@ -233,6 +248,14 @@ class Patient:
             tta=tta,
             bloods=bloods,
         )
+
+    def merge(self, other_patient: "Patient") -> None:
+        """Merges 'other_patient''s details into self, exlcuding patient identifiers and location in place."""
+        attrs_to_merge = ["reason_for_admission", "jobs", "edd", "ds", "tta", "bloods"]
+
+        for attr in attrs_to_merge:
+            other_pt_attr = getattr(other_patient, attr)
+            setattr(self, attr, other_pt_attr)
 
     def __repr__(self):
         cls_name = self.__class__.__name__
@@ -244,12 +267,3 @@ class Patient:
             f"<{cls_name}(name={self.full_name}, age={self.age}, nhs_number={self.nhs_number}, "
             f"location=Location(ward={self.location.ward.value}, bed={self.location.bed}))>"
         )
-
-    def __eq__(self, other):
-        return (self.dob == other.dob) & (self.nhs_number == other.nhs_number)
-
-
-def remove_table_row(table, row):
-    tbl = table._tbl
-    tr = row._tr
-    tbl.remove(tr)
