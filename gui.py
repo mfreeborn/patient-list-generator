@@ -4,9 +4,8 @@ import subprocess
 from pathlib import Path
 
 import PySimpleGUI as sg
-from docx import Document
 
-from main import generate_patient_list
+from main import main
 from teams import TEAMS
 
 sg.theme("Dark Blue 3")
@@ -14,7 +13,7 @@ sg.theme("Dark Blue 3")
 layout = [
     [sg.Text("Choose input file:")],
     [
-        sg.InputText(disabled=True, key="input_filename", enable_events=True),
+        sg.InputText(disabled=True, key="input_file_path", enable_events=True),
         sg.FileBrowse(
             file_types=(("Word Documents", "*.docm"), ("Word Documents", "*.docx"))
         ),
@@ -28,7 +27,7 @@ layout = [
         )
     ],
     [sg.Text("Output folder:")],
-    [sg.InputText(disabled=True, key="output_folder_name")],
+    [sg.InputText(disabled=True, key="output_folder_path")],
     [sg.Text("Output filename:")],
     [sg.InputText(disabled=True, key="output_filename")],
     [
@@ -45,12 +44,13 @@ while True:
     if event is None:
         break
 
-    if event == "input_filename":
-        path = Path(values["input_filename"])
-        parent_path = str(path.parent)
+    if event == "input_file_path":
+        path = Path(values["input_file_path"])
+        parent_path = path.parent
         file_ext = path.suffix
 
-        main_window["output_folder_name"].update(parent_path)
+        today = datetime.date.today()
+        main_window["output_folder_path"].update(parent_path)
         if not values["selected_team"]:
             main_window["output_filename"].update(
                 f"{datetime.datetime.today():%d-%m-%y}{file_ext}"
@@ -63,19 +63,19 @@ while True:
 
     if event == "selected_team":
         selected_team = values["selected_team"]
-        if not values["input_filename"]:
+        if not values["input_file_path"]:
             continue
-        path = Path(values["input_filename"])
+        path = Path(values["input_file_path"])
         file_ext = path.suffix
         main_window["output_filename"].update(
             f"{datetime.datetime.today():%d-%m-%y}_{selected_team.name.value.lower()}{file_ext}"
         )
 
     if event == "open_output_folder":
-        if not values["output_folder_name"]:
+        if not values["output_folder_path"]:
             continue
 
-        path = values["output_folder_name"]
+        path = values["output_folder_path"]
 
         if os.name == "nt":
             # Windows
@@ -85,9 +85,18 @@ while True:
             subprocess.Popen(["xdg-open", path])
 
     if event == "generate_list":
-        if values["selected_team"] and values["input_filename"]:
+        if values["selected_team"] and values["input_file_path"]:
             team = values["selected_team"]
-            input_filename = Path(values["input_filename"]).name
-            doc = Document(input_filename)
+            input_file_path = Path(values["input_file_path"])
+            output_file_path = (
+                Path(values["output_folder_path"]) / values["output_filename"]
+            )
 
-            generate_patient_list(team=team, doc=doc)
+            print(input_file_path)
+            print(output_file_path)
+
+            main(
+                team=team,
+                input_file_path=input_file_path,
+                output_file_path=output_file_path,
+            )

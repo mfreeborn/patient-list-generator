@@ -3,7 +3,7 @@ from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.oxml import parse_xml
 from docx.oxml.ns import nsdecls
-from docx.shared import Pt
+from docx.shared import Pt, Inches
 
 from careflow import get_careflow_patients
 from enums import Ward
@@ -14,6 +14,7 @@ from teams import Team
 class HandoverTable:
     def __init__(self, table):
         self._table = table
+        self._new_patient_indices = set()
 
     def __getattr__(self, attr):
         return getattr(self._table, attr)
@@ -30,6 +31,7 @@ class HandoverTable:
 
     def add_patient_row(self, patient: Patient):
         new_patient_row = self.add_row()
+        new_patient_row.patient = patient
 
         new_patient_row.cells[0].text = patient.bed
         new_patient_row.cells[1].text = patient.patient_details
@@ -39,7 +41,9 @@ class HandoverTable:
         new_patient_row.cells[5].text = patient.ds
         new_patient_row.cells[6].text = patient.tta
         new_patient_row.cells[7].text = patient.bloods
-        new_patient_row.is_new_patient = True if patient.is_new else False
+
+        if patient.is_new:
+            self._new_patient_indices.add(new_patient_row._index)
 
     def format(self):
         for row in self.rows:
@@ -59,11 +63,11 @@ class HandoverTable:
                     for paragraph in cell.paragraphs:
                         paragraph.paragraph_format.keep_with_next = True
 
-            # format rows containing new patients
-            if hasattr(row, "is_new_patient") and row.is_new_patient:
+            # format new patients as bold
+            if row._index in self._new_patient_indices:
                 for cell in row.cells:
-                    for paragraph in cell.paragraphs:
-                        for run in paragraph.runs:
+                    for para in cell.paragraphs:
+                        for run in para.runs:
                             run.bold = True
 
             # format all cells in the table
@@ -72,6 +76,7 @@ class HandoverTable:
                 for paragraph in cell.paragraphs:
                     formatter = paragraph.paragraph_format
                     formatter.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                    formatter.space_before = Pt(2)
                     formatter.space_after = Pt(2)
 
             # prevent rows from splitting across page breaks
@@ -103,7 +108,7 @@ class HandoverList:
             if row.cells[0].text.lower() == "bed":
                 continue
 
-            # skip past the ward name headers:
+            # skip past the ward name headers or empty rows
             if row.cells[0].text == row.cells[1].text:
                 continue
 
@@ -121,11 +126,12 @@ class HandoverList:
                 # patient must be new to the team
                 careflow_patient.is_new = True
                 # TODO: set 'reason_for_admission' here
+                # careflow_patient.reason_for_admission = get_reason_for_admission(careflow_patient)
                 updated_list.append(careflow_patient)
             else:
                 # patient must be on the original list, therefore merge the
                 # jobs, EDD etc into the careflow patient. By merging into
-                # the careflow_pt, we alsoensure that their location is fully
+                # the careflow_pt, we also ensure that their location is fully
                 # up to date incase they were moved since yesterday
                 careflow_patient.merge(self.patients[careflow_patient.nhs_number])
                 updated_list.append(careflow_patient)
@@ -156,6 +162,12 @@ class HandoverList:
 
         table.format()
 
+        footer = self.sections[0].footer
+        footer.footer_distance = Inches(1)
+        footer.paragraphs[
+            0
+        ].text = f"{self.patient_count} patients ({self.new_patient_count} new)\n\n\n\n"
+
     def update(self):
         """Update the HandoverList patient table.
 
@@ -166,3 +178,11 @@ class HandoverList:
         """
         self._update_patients()
         self._update_handover_table()
+
+    @property
+    def patient_count(self):
+        return len(self.patients)
+
+    @property
+    def new_patient_count(self):
+        return sum(patient.is_new for patient in self.patients)

@@ -65,12 +65,15 @@ class PatientList:
         except KeyError:
             raise KeyError(f"No patient with the NHS number '{key}' found in the list")
 
-    def __contains__(self, key):
-        """Assert whether a given patient (where key == NHS number) is in the list."""
-        return key in self._patient_mapping
+    def __contains__(self, key: "Patient"):
+        """Assert whether a given patient (where type(key) == Patient) is in the list."""
+        return key.nhs_number in self._patient_mapping
 
     def __iter__(self):
         return iter(self._patient_mapping.values())
+
+    def __len__(self):
+        return len(self._patient_mapping)
 
     def __repr__(self):
         return (
@@ -250,7 +253,7 @@ class Patient:
         )
 
     def merge(self, other_patient: "Patient") -> None:
-        """Merges 'other_patient''s details into self, exlcuding patient identifiers and location in place."""
+        """Merge 'other_patient''s details into self in place."""
         attrs_to_merge = ["reason_for_admission", "jobs", "edd", "ds", "tta", "bloods"]
 
         for attr in attrs_to_merge:
