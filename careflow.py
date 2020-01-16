@@ -63,6 +63,7 @@ def _main(team: Team, credentials: dict):
             "skip": 0,
             "take": 50,
         }
+
         for consultant in consultants:
             search_params["clinician"] = consultant.value
             allowed_wards = {ward.value for ward in Ward}

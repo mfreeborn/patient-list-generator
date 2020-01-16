@@ -2,7 +2,6 @@ import datetime
 import os
 import subprocess
 from pathlib import Path
-from pprint import pprint
 
 import PySimpleGUI as sg
 
@@ -91,10 +90,11 @@ layout = [
             [
                 [
                     sg.Tab("Main", main_tab_layout),
-                    sg.Tab("Logs", log_tab_layout),
                     sg.Tab("Credentials", credentials_tab_layout),
+                    sg.Tab("Logs", log_tab_layout),
                 ]
-            ]
+            ],
+            key="tab_group",
         )
     ]
 ]
@@ -106,7 +106,11 @@ credentials = {
     "trakcare_password": "",
 }
 
-main_window = sg.Window("Patient List Generator", layout)
+main_window = sg.Window("Patient List Generator", layout, finalize=True)
+
+# switch to the Credentials tab on startup
+main_window["tab_group"].Widget.select(1)
+
 while True:
     event, values = main_window.read()
 
@@ -153,7 +157,6 @@ while True:
             main_window.refresh()
 
             try:
-                pprint(credentials)
                 main(
                     team=team,
                     credentials=credentials,
@@ -162,7 +165,7 @@ while True:
                 )
 
             except Exception as e:
-                pprint(e)
+                print(e)
                 main_window["error_text"].update(visible=True)
 
             main_window["generate_list_button"].update("Generate List", disabled=False)
