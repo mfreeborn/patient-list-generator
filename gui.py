@@ -13,7 +13,9 @@ sg.theme("Dark Blue 3")
 layout = [
     [sg.Text("Choose input file:")],
     [
-        sg.InputText(disabled=True, key="input_file_path", enable_events=True),
+        sg.InputText(
+            size=(55, 1), disabled=True, key="input_file_path", enable_events=True
+        ),
         sg.FileBrowse(
             file_types=(("Word Documents", "*.docm"), ("Word Documents", "*.docx"))
         ),
@@ -27,7 +29,10 @@ layout = [
         )
     ],
     [sg.Text("Output folder:")],
-    [sg.InputText(disabled=True, key="output_folder_path")],
+    [
+        sg.InputText(size=(55, 1), disabled=True, key="output_folder_path"),
+        sg.FolderBrowse(),
+    ],
     [sg.Text("Output filename:")],
     [sg.InputText(disabled=True, key="output_filename")],
     [
@@ -68,7 +73,7 @@ while True:
         path = Path(values["input_file_path"])
         file_ext = path.suffix
         main_window["output_filename"].update(
-            f"{datetime.datetime.today():%d-%m-%y}_{selected_team.name.value.lower()}{file_ext}"
+            f"{datetime.datetime.today():%d-%m-%Y}_{selected_team.name.value.lower()}{file_ext}"
         )
 
     if event == "open_output_folder":

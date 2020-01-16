@@ -49,4 +49,6 @@ class Consultant(Enum):
 
     RIAZ_LATIF = "Dr Riaz Latif"
 
-    ELSADIG_ELAMIN = "Dr Elsadig Elamin"
+    # note the required spaces at the end of Elamin's name!
+    # that took ages to debug...
+    ELSADIG_ELAMIN = "Dr Elsadig Elamin  "

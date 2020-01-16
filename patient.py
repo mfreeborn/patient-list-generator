@@ -83,6 +83,8 @@ class PatientList:
 
 
 class Location:
+    fortescue_bay_pattern = re.compile(r"FOR\d(\D{4,6}){1}(BAY)?$")
+
     def __init__(self, ward: Ward, bay: str, bed: str):
         self.ward: Ward = ward
         self.bay: str = bay
@@ -92,10 +94,11 @@ class Location:
         if self.ward == Ward.FORTESCUE:
             # Fortescue uses a different bed naming convention i.e. Blue 1 or SR Lilac
             if bay.lower().endswith("rm"):
-                bay_colour = bay[3:-2]
+                bay_colour = bay[3:-2].title()
                 return f"SR {bay_colour}"
-            bay_colour = bay[4:-3].title()
-            bed_num = int(bed[-2:])
+
+            bay_colour = self.fortescue_bay_pattern.search(bay)[1].title()
+            bed_num = int(bed[-1])
             return f"{bay_colour} {bed_num}"
         else:
             if self.is_sideroom:
@@ -107,19 +110,19 @@ class Location:
         """Helper property for use as a sorting key to correctly sort patients in a list by bed.
 
         The main purpose is to correctly allow for "SR9" being a lower bed number than "SR10"
-        and to handle FOrtescue's unique bed-naming convetion
+        and to handle Fortescue's unique bed-naming convetion.
         """
         if self.is_sideroom and self.ward != Ward.FORTESCUE:
             bed_num = int(self.bed.replace("SR", ""))
             return f"SR{bed_num:02d}"
         elif self.is_sideroom:
-            # push Fortescue side rooms to the bottom
-            return f"z{self.bed}"
+            # push side rooms to the bottom
+            return f"Z{self.bed}"
         return self.bed
 
     @property
     def is_sideroom(self) -> bool:
-        return "SR" in self.bay
+        return "SR" in self.bay or "RM" in self.bay
 
 
 class Patient:
@@ -184,7 +187,7 @@ class Patient:
     def patient_details(self):
         """Return the patient detail's in the correct format for the patient list."""
         if not all([self.surname, self.given_name, self.dob, self.nhs_number]):
-            return "UNKOWN"
+            return "UNKNOWN"
 
         return (
             f"{self.surname.upper()}, {self.given_name.title()}\n"

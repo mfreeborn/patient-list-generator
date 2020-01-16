@@ -19,9 +19,9 @@ def main(team: Team, input_file_path: Path, output_file_path: Path = None):
 
 
 if __name__ == "__main__":
-    team = TEAMS[TeamName.RESPIRATORY]
+    team = TEAMS[TeamName.ARBAB]
     main(
         team=team,
-        input_file_path=Path("31.12.2019.docm").resolve(),
+        input_file_path=Path("Lists/31.12.2019.docm").resolve(),
         output_file_path=None,
     )

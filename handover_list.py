@@ -160,8 +160,10 @@ class HandoverList:
 
             table.add_patient_row(pt)
 
+        # apply formatting to the newly updated table
         table.format()
 
+        # put the patient count in the footer
         footer = self.sections[0].footer
         footer.footer_distance = Inches(1)
         footer.paragraphs[
@@ -172,7 +174,7 @@ class HandoverList:
         """Update the HandoverList patient table.
 
         Comprises of 2 phases:
-            1) Update 'self.patients' using CareFlow +/- TrakCare
+            1) Update the in-memory 'self.patients' PatientList using CareFlow +/- TrakCare
             2) Update the underlying table in the Word document with
                the updated 'self.patients'
         """
