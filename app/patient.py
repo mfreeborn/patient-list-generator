@@ -91,6 +91,7 @@ class Location:
         self.bed: str = self._parse_bed(bay, bed)
 
     def _parse_bed(self, bay: str, bed: str) -> str:
+        """Take the bay/bed as given by the CareFlow API and convert it to a user-friendly format."""
         if self.ward == Ward.FORTESCUE:
             # Fortescue uses a different bed naming convention i.e. Blue 1 or SR Lilac
             if bay.lower().endswith("rm"):
@@ -103,6 +104,8 @@ class Location:
         else:
             if self.is_sideroom:
                 return f"SR{int(bay[-2:])}"
+            if self.ward == Ward.LUNDY and self.bay.startswith("CAP"):
+                self.ward = Ward.CAPENER
             return f"{int(bay[-2:])}{bed[-1]}"
 
     @property
@@ -167,21 +170,21 @@ class Patient:
     @property
     def age(self) -> str:
         if self.dob is None:
-            return ""
+            return
 
         today = datetime.date.today()
-        return str(
+        return (
             today.year
             - self.dob.year
             - ((today.month, today.day) < (self.dob.month, self.dob.day))
         )
 
     @property
-    def full_name(self) -> str:
+    def list_name(self) -> str:
         if self.given_name is None or self.surname is None:
-            return "UNKNOWN"
+            return "UNKNOWN, Unknown"
 
-        return f"{self.given_name} {self.surname}"
+        return f"{self.surname.upper()}, {self.given_name.title()}"
 
     @property
     def patient_details(self):
@@ -190,8 +193,8 @@ class Patient:
             return "UNKNOWN"
 
         return (
-            f"{self.surname.upper()}, {self.given_name.title()}\n"
-            f"{self.dob.strftime('%d/%m/%Y')} ({self.age} Yrs)\n"
+            f"{self.list_name}\n"
+            f"{self.dob:%d/%m/%Y} ({self.age} Yrs)\n"
             f"{self.nhs_number}"
         )
 
@@ -265,11 +268,11 @@ class Patient:
 
     def __repr__(self):
         cls_name = self.__class__.__name__
-        pt = f"<{cls_name}(name={self.full_name}, age={self.age}, nhs_number={self.nhs_number})>"
+        pt = f"<{cls_name}(name={self.list_name}, age={self.age}, nhs_number={self.nhs_number})>"
 
         if self.location is None:
             return pt
         return (
-            f"<{cls_name}(name={self.full_name}, age={self.age}, nhs_number={self.nhs_number}, "
+            f"<{cls_name}(name={self.list_name}, age={self.age}, nhs_number={self.nhs_number}, "
             f"location=Location(ward={self.location.ward.value}, bed={self.location.bed}))>"
         )
