@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from docx.table import _Row
 
-from enums import Ward
+from app.enums import Ward
 
 
 class PatientList:

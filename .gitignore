@@ -4,6 +4,8 @@ test.py
 .vscode/
 .git/
 __pycache__/
+.pytest_cache/
+Lists/
 *.doc
 *.docm
 *.docx
