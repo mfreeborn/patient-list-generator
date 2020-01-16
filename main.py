@@ -6,7 +6,9 @@ from handover_list import HandoverList
 from teams import TEAMS, Team
 
 
-def main(team: Team, input_file_path: Path, output_file_path: Path = None):
+def main(
+    team: Team, credentials: dict, input_file_path: Path, output_file_path: Path = None
+):
     if output_file_path is None:
         file_ext = Path(input_file_path).suffix
         output_file_path = (
@@ -14,7 +16,7 @@ def main(team: Team, input_file_path: Path, output_file_path: Path = None):
         ).with_suffix(file_ext)
 
     handover_list = HandoverList(team=team, file_path=input_file_path)
-    handover_list.update()
+    handover_list.update(credentials=credentials)
     handover_list.save(output_file_path)
 
 

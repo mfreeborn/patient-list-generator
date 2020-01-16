@@ -117,16 +117,19 @@ class HandoverList:
 
         return pt_list
 
-    def _update_patients(self):
+    def _update_patients(self, credentials):
         updated_list = PatientList(home_ward=self.team.home_ward)
-        latest_careflow_pts = get_careflow_patients(team=self.team)
+        latest_careflow_pts = get_careflow_patients(
+            team=self.team, credentials=credentials
+        )
 
         for careflow_patient in latest_careflow_pts:
             if careflow_patient not in self.patients:
                 # patient must be new to the team
                 careflow_patient.is_new = True
                 # TODO: set 'reason_for_admission' here
-                # careflow_patient.reason_for_admission = get_reason_for_admission(careflow_patient)
+                # careflow_patient.reason_for_admission = get_reason_for_admission(careflow_patient,
+                #                                                                  credentials)
                 updated_list.append(careflow_patient)
             else:
                 # patient must be on the original list, therefore merge the
@@ -170,7 +173,7 @@ class HandoverList:
             0
         ].text = f"{self.patient_count} patients ({self.new_patient_count} new)\n\n\n\n"
 
-    def update(self):
+    def update(self, credentials):
         """Update the HandoverList patient table.
 
         Comprises of 2 phases:
@@ -178,7 +181,7 @@ class HandoverList:
             2) Update the underlying table in the Word document with
                the updated 'self.patients'
         """
-        self._update_patients()
+        self._update_patients(credentials=credentials)
         self._update_handover_table()
 
     @property
