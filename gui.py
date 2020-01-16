@@ -121,14 +121,15 @@ while True:
     main_window["error_text"].update(visible=False)
 
     if event == "input_file_path":
-        path = Path(values["input_file_path"])
-        parent_path = path.parent
-        file_ext = path.suffix
+        if values['input_file_path']:
+            path = Path(values["input_file_path"])
+            parent_path = path.parent
+            file_ext = path.suffix
 
-        today = datetime.date.today()
-        if not values["output_folder_path"]:
-            main_window["output_folder_path"].update(parent_path)
-            main_window["open_output_folder"].update(disabled=False)
+            today = datetime.date.today()
+            if not values["output_folder_path"]:
+                main_window["output_folder_path"].update(parent_path)
+                main_window["open_output_folder"].update(disabled=False)
 
     if event == "open_output_folder":
         if not values["output_folder_path"]:
