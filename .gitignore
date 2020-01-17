@@ -1,5 +1,6 @@
 creds.py
 test.py
+.idea/
 .venv/
 .vscode/
 .git/

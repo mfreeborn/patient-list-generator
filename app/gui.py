@@ -197,8 +197,8 @@ def run_gui():
                 if event == "input_file_path":
                     if values["input_file_path"]:
                         path = Path(values["input_file_path"])
+                        main_window['input_file_path'].update(path)
                         parent_path = path.parent
-                        file_ext = path.suffix
 
                         if not values["output_folder_path"]:
                             main_window["output_folder_path"].update(parent_path)
@@ -219,7 +219,7 @@ def run_gui():
                         executor.submit(_generate_list, gui_queue, values)
 
                 if event == "save_logs_button":
-                    filename = f"logs_{datetime.datetime.now():%Y-%m-%d_%H:%M:%S}.txt"
+                    filename = f"logs_{datetime.datetime.now():%Y-%m-%d_%H_%M_%S}.txt"
                     file_path = LOGS_DIR / filename
                     logs = main_window["output"].Get()
 
