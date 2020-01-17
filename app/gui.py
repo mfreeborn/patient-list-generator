@@ -204,6 +204,10 @@ def run_gui():
                             main_window["output_folder_path"].update(parent_path)
                             main_window["open_output_folder"].update(disabled=False)
 
+                if event == "output_folder_path":
+                    path = Path(values['output_folder_path'])
+                    main_window['output_folder_path'].update(path)
+
                 if event == "open_output_folder":
                     if not values["output_folder_path"]:
                         continue
