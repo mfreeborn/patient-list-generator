@@ -69,6 +69,7 @@ def _main(team: Team, credentials: dict):
             data = r.json()
             patients = data["Data"]["Patients"]
             patients = [
+                # TODO: extract this out into a classmethod on Patient
                 Patient(
                     given_name=pt["PatientGivenName"],
                     surname=pt["PatientFamilyName"],
