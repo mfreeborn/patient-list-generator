@@ -54,9 +54,6 @@ def _main(team: Team, credentials: dict):
             "https://appapi.careflowapp.com/patients/SearchForPatientsByPopulation"
         )
 
-        consultants = team.consultants
-        patient_list = PatientList(home_ward=team.home_ward)
-
         search_params = {
             "networkId": 1123,
             "clinician": "",
@@ -64,9 +61,10 @@ def _main(team: Team, credentials: dict):
             "take": 50,
         }
 
-        for consultant in consultants:
+        allowed_wards = {ward.value for ward in Ward}
+        patient_list = PatientList(home_ward=team.home_ward)
+        for consultant in team.consultants:
             search_params["clinician"] = consultant.value
-            allowed_wards = {ward.value for ward in Ward}
             r = s.get(pt_search_url, params=search_params)
             data = r.json()
             patients = data["Data"]["Patients"]

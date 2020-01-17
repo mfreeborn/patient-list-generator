@@ -3,7 +3,7 @@ from datetime import date
 import pytest
 
 from app.enums import Ward
-from app.patient import Location, Patient, PatientList
+from app.patient import Location, Patient
 
 
 def test_location_parse_beds(careflow_bed_format):
