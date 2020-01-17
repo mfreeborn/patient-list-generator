@@ -1,6 +1,6 @@
 from typing import List
 
-from enums import Consultant, TeamName, Ward
+from app.enums import Consultant, TeamName, Ward
 
 
 class Team:

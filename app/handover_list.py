@@ -5,10 +5,10 @@ from docx.oxml import parse_xml
 from docx.oxml.ns import nsdecls
 from docx.shared import Pt, Inches
 
-from careflow import get_careflow_patients
-from enums import Ward
-from patient import Patient, PatientList
-from teams import Team
+from app.careflow import get_careflow_patients
+from app.enums import Ward
+from app.patient import Patient, PatientList
+from app.teams import Team
 
 
 class HandoverTable:

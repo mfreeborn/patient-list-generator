@@ -5,9 +5,9 @@ from pathlib import Path
 
 import PySimpleGUI as sg
 
-from main import main
-from teams import TEAMS, Team
-from utils import log_gui
+from app.main import main
+from app.teams import TEAMS, Team
+from app.utils import log_gui
 
 sg.theme("Dark Blue 3")
 
@@ -106,104 +106,108 @@ credentials = {
     "trakcare_password": "",
 }
 
-main_window = sg.Window("Patient List Generator", layout, finalize=True)
 
-# switch to the Credentials tab on startup
-main_window["tab_group"].Widget.select(1)
+def run_gui():
+    main_window = sg.Window("Patient List Generator", layout, finalize=True)
 
-while True:
-    event, values = main_window.read()
+    # switch to the Credentials tab on startup
+    main_window["tab_group"].Widget.select(1)
 
-    if event is None:
-        break
+    while True:
+        event, values = main_window.read()
 
-    log_gui(event, values)
-    main_window["error_text"].update(visible=False)
+        if event is None:
+            break
 
-    if event == "input_file_path":
-        if values['input_file_path']:
-            path = Path(values["input_file_path"])
-            parent_path = path.parent
-            file_ext = path.suffix
+        log_gui(event, values)
+        main_window["error_text"].update(visible=False)
 
-            today = datetime.date.today()
+        if event == "input_file_path":
+            if values["input_file_path"]:
+                path = Path(values["input_file_path"])
+                parent_path = path.parent
+                file_ext = path.suffix
+
+                today = datetime.date.today()
+                if not values["output_folder_path"]:
+                    main_window["output_folder_path"].update(parent_path)
+                    main_window["open_output_folder"].update(disabled=False)
+
+        if event == "open_output_folder":
             if not values["output_folder_path"]:
-                main_window["output_folder_path"].update(parent_path)
-                main_window["open_output_folder"].update(disabled=False)
+                continue
 
-    if event == "open_output_folder":
-        if not values["output_folder_path"]:
-            continue
+            path = values["output_folder_path"]
 
-        path = values["output_folder_path"]
+            if os.name == "nt":
+                # Windows
+                os.startfile(path)
+            else:
+                # Linux
+                subprocess.Popen(["xdg-open", path])
 
-        if os.name == "nt":
-            # Windows
-            os.startfile(path)
-        else:
-            # Linux
-            subprocess.Popen(["xdg-open", path])
-
-    if event == "generate_list_button":
-        if values["selected_team"] and values["input_file_path"]:
-            team = values["selected_team"]
-            input_file_path = Path(values["input_file_path"])
-            output_file_path = (
-                Path(values["output_folder_path"]) / values["output_filename"]
-            )
-
-            main_window["generate_list_button"].update(
-                "GENERATING LIST...", disabled=True
-            )
-            main_window.refresh()
-
-            try:
-                main(
-                    team=team,
-                    credentials=credentials,
-                    input_file_path=input_file_path,
-                    output_file_path=output_file_path,
+        if event == "generate_list_button":
+            if values["selected_team"] and values["input_file_path"]:
+                team = values["selected_team"]
+                input_file_path = Path(values["input_file_path"])
+                output_file_path = (
+                    Path(values["output_folder_path"]) / values["output_filename"]
                 )
 
-            except Exception as e:
-                print(e)
-                main_window["error_text"].update(visible=True)
+                main_window["generate_list_button"].update(
+                    "GENERATING LIST...", disabled=True
+                )
+                main_window.refresh()
 
-            main_window["generate_list_button"].update("Generate List", disabled=False)
+                try:
+                    main(
+                        team=team,
+                        credentials=credentials,
+                        input_file_path=input_file_path,
+                        output_file_path=output_file_path,
+                    )
 
-    if event == "set_credentials":
-        for cred in [
-            "careflow_username",
-            "careflow_password",
-            "trakcare_username",
-            "trakcare_password",
-        ]:
-            credentials[cred] = values[cred].strip()
+                except Exception as e:
+                    print(e)
+                    main_window["error_text"].update(visible=True)
 
-    if all(
-        values[cred]
-        for cred in [
-            "careflow_username",
-            "careflow_password",
-            "trakcare_username",
-            "trakcare_password",
-        ]
-    ):
-        main_window["set_credentials"].update("Update Credentials")
-    else:
-        main_window["set_credentials"].update("Set Credentials")
+                main_window["generate_list_button"].update(
+                    "Generate List", disabled=False
+                )
 
-    if values["selected_team"] and not isinstance(values["selected_team"], Team):
-        main_window["selected_team"].update(None)
+        if event == "set_credentials":
+            for cred in [
+                "careflow_username",
+                "careflow_password",
+                "trakcare_username",
+                "trakcare_password",
+            ]:
+                credentials[cred] = values[cred].strip()
 
-    if values["output_folder_path"]:
-        main_window["open_output_folder"].update(disabled=False)
+        if all(
+            values[cred]
+            for cred in [
+                "careflow_username",
+                "careflow_password",
+                "trakcare_username",
+                "trakcare_password",
+            ]
+        ):
+            main_window["set_credentials"].update("Update Credentials")
+        else:
+            main_window["set_credentials"].update("Set Credentials")
 
-    if values["input_file_path"] and isinstance(values["selected_team"], Team):
-        path = Path(values["input_file_path"])
-        file_ext = path.suffix
-        main_window["output_filename"].update(
-            f"{datetime.datetime.today():%d-%m-%Y}_{values['selected_team'].name.value.lower()}{file_ext}"
-        )
+        if values["selected_team"] and not isinstance(values["selected_team"], Team):
+            main_window["selected_team"].update(None)
 
-        main_window["generate_list_button"].update(disabled=False)
+        if values["output_folder_path"]:
+            main_window["open_output_folder"].update(disabled=False)
+
+        if values["input_file_path"] and isinstance(values["selected_team"], Team):
+            path = Path(values["input_file_path"])
+            file_ext = path.suffix
+            main_window["output_filename"].update(
+                f"{datetime.datetime.today():%d-%m-%Y}_{values['selected_team'].name.value.lower()}{file_ext}"
+            )
+
+            main_window["generate_list_button"].update(disabled=False)

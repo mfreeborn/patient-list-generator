@@ -1,9 +1,9 @@
 import datetime
 from pathlib import Path
 
-from enums import TeamName
-from handover_list import HandoverList
-from teams import TEAMS, Team
+from app.enums import TeamName
+from app.handover_list import HandoverList
+from app.teams import TEAMS, Team
 
 
 def main(

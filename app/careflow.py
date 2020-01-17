@@ -1,13 +1,13 @@
 import datetime
-from app.exceptions import (
-    CareFlowError,
-    NoCareFlowCredentialsError,
-    CareFlowAuthorisationError,
-)
 
 from requests_html import HTMLSession
 
 from app.enums import Ward
+from app.exceptions import (
+    CareFlowAuthorisationError,
+    CareFlowError,
+    NoCareFlowCredentialsError,
+)
 from app.patient import Location, Patient, PatientList
 from app.teams import Team
 
