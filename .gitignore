@@ -6,6 +6,8 @@ test.py
 __pycache__/
 .pytest_cache/
 Lists/
+logs/
+Logs/
 *.doc
 *.docm
 *.docx
