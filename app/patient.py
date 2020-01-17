@@ -1,6 +1,7 @@
 import datetime
 import re
 from collections import defaultdict
+from typing import Union
 
 from docx.table import _Row
 
@@ -14,7 +15,7 @@ class PatientList:
         self._patient_mapping: dict = {}
 
     def append(self, patient: "Patient") -> None:
-        self._patient_mapping[patient.nhs_number] = patient
+        self[patient] = patient
 
     def extend(self, patients: list) -> None:
         for pt in patients:
@@ -50,7 +51,7 @@ class PatientList:
 
     @property
     def patients(self):
-        return list(self._patient_mapping.values())
+        return list(self)
 
     @patients.setter
     def patients(self, value):
@@ -58,16 +59,26 @@ class PatientList:
             f"{self.__class__.__name__}.patients is a read-only property."
         )
 
-    def __getitem__(self, key: str) -> "Patient":
-        """Return a Patient from the list with a given NHS number."""
+    def __getitem__(self, key: Union[str, "Patient"]) -> "Patient":
+        """Return a Patient from the list with a given Patient or NHS number."""
+        if isinstance(key, Patient):
+            key = key.nhs_number
         try:
             return self._patient_mapping[key]
         except KeyError:
             raise KeyError(f"No patient with the NHS number '{key}' found in the list")
 
-    def __contains__(self, key: "Patient"):
+    def __setitem__(self, _: str, value: "Patient"):
+        if not isinstance(value, Patient):
+            raise TypeError
+
+        self._patient_mapping[value.nhs_number] = value
+
+    def __contains__(self, key: Union[str, "Patient"]) -> bool:
         """Assert whether a given patient (where type(key) == Patient) is in the list."""
-        return key.nhs_number in self._patient_mapping
+        if isinstance(key, Patient):
+            key = key.nhs_number
+        return key in self._patient_mapping
 
     def __iter__(self):
         return iter(self._patient_mapping.values())
@@ -234,7 +245,7 @@ class Patient:
 
         if nhs_number is None:
             # no match found by the regex
-            raise Exception(
+            raise ValueError(
                 f"No NHS number found in the table cell with the following contents: {pt_details}"
             )
         else:
@@ -259,12 +270,29 @@ class Patient:
         )
 
     def merge(self, other_patient: "Patient") -> None:
-        """Merge 'other_patient''s details into self in place."""
+        """Merge 'other_patient''s details into self in place.
+
+        This method takes two instances of the /same/ patient:
+            1) Patient populated from CareFlow with up to date location but no jobs, edd etc
+            2) Patient populated from the handover list with up to date jobs, edd etc but missing
+               patient identifiers
+
+        ...and merges the two together.
+
+        The result should be a fully populated Patient with an up to date location from CareFlow
+        as well as up to date information about jobs, edd etc"""
+        # the two Patients must represent the same underlying person
+        if self != other_patient:
+            raise ValueError
+
         attrs_to_merge = ["reason_for_admission", "jobs", "edd", "ds", "tta", "bloods"]
 
         for attr in attrs_to_merge:
             other_pt_attr = getattr(other_patient, attr)
             setattr(self, attr, other_pt_attr)
+
+    def __eq__(self, other):
+        return isinstance(other, type(self)) and self.nhs_number == other.nhs_number
 
     def __repr__(self):
         cls_name = self.__class__.__name__

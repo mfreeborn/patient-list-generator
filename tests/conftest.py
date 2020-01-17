@@ -1,6 +1,6 @@
 import pytest
 from app.enums import Ward
-from app.patient import Patient
+from app.patient import Patient, PatientList
 
 
 @pytest.fixture
@@ -49,3 +49,8 @@ def careflow_bed_format():
 @pytest.fixture
 def patient():
     return Patient("111 111 1111")
+
+
+@pytest.fixture
+def empty_patient_list():
+    return PatientList(home_ward=Ward.GLOSSOP)
