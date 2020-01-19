@@ -1,17 +1,10 @@
-import datetime
 import queue
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 
-from app.gui import credential_keys
 from app.gui.enums import Key, Message
 from app.gui.events import EVENTS
 from app.gui.layout import main_layout
-from app.gui.utils import init_gui, log_gui_event, set_text_invisible
-from app.teams import Team
-
-LOGS_DIR = Path.cwd() / "logs"
-LOGS_DIR.mkdir(exist_ok=True)
+from app.gui.utils import init_gui, log_gui_event, set_text_invisible, update_gui
 
 
 def run_gui():
@@ -26,8 +19,8 @@ def run_gui():
                 # closes the program
                 break
 
+            # handle user interactions synchronously
             elif event != "__TIMEOUT__":
-                # handles any user events (i.e. not just a timeout)
                 log_gui_event(event, values)
                 set_text_invisible(window=main_window)
 
@@ -37,31 +30,9 @@ def run_gui():
 
                 EVENTS[event](values, main_window, gui_queue, executor)
 
-                if all(values[cred] for cred in credential_keys):
-                    main_window[Key.SET_CREDENTIALS_BUTTON].update("Update Credentials")
-                else:
-                    main_window[Key.SET_CREDENTIALS_BUTTON].update("Set Credentials")
+                update_gui(values=values, window=main_window)
 
-                if values[Key.SELECTED_TEAM] and not isinstance(
-                    values[Key.SELECTED_TEAM], Team
-                ):
-                    main_window[Key.SELECTED_TEAM].update(None)
-
-                if values[Key.OUTPUT_FOLDER_PATH]:
-                    main_window[Key.OPEN_OUTPUT_FOLDER_BUTTON].update(disabled=False)
-
-                if values[Key.INPUT_FILE_PATH] and isinstance(
-                    values[Key.SELECTED_TEAM], Team
-                ):
-                    path = Path(values[Key.INPUT_FILE_PATH])
-                    file_ext = path.suffix
-                    main_window[Key.OUTPUT_FILENAME].update(
-                        f"{datetime.datetime.today():%d-%m-%Y}_"
-                        f"{values[Key.SELECTED_TEAM].name.value.lower()}{file_ext}"
-                    )
-
-                    main_window[Key.GENERATE_LIST_BUTTON].update(disabled=False)
-
+            # check for queue messages asynchronously
             try:
                 message = gui_queue.get_nowait()
             except queue.Empty:

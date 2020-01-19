@@ -1,11 +1,9 @@
 import datetime
 from pathlib import Path
 
-from app.gui import credential_keys
+from app.gui import LOGS_DIR, credential_keys
 from app.gui.enums import Key
 from app.gui.utils import generate_list, open_folder
-
-LOGS_DIR = Path.cwd() / "logs"
 
 
 def handle_input_file_path(values, window, gui_queue, executor):

@@ -9,6 +9,7 @@ import PySimpleGUI as sg
 from app.gui import credential_keys
 from app.gui.enums import Key, Message
 from app.main import main
+from app.teams import Team
 
 
 def generate_list(queue, values):
@@ -93,3 +94,27 @@ def set_text_invisible(window):
     window[Key.LIST_SUCCESS_TEXT].update(visible=False)
     window[Key.CREDENTIALS_SUCCESS_TEXT].update(visible=False)
     window[Key.LOGS_SUCCESS_TEXT].update(visible=False)
+
+
+def update_gui(values, window):
+    """Handle the state of the gui depending on what values are/are not present."""
+    if all(values[cred] for cred in credential_keys):
+        window[Key.SET_CREDENTIALS_BUTTON].update("Update Credentials")
+    else:
+        window[Key.SET_CREDENTIALS_BUTTON].update("Set Credentials")
+
+    if values[Key.SELECTED_TEAM] and not isinstance(values[Key.SELECTED_TEAM], Team):
+        window[Key.SELECTED_TEAM].update(None)
+
+    if values[Key.OUTPUT_FOLDER_PATH]:
+        window[Key.OPEN_OUTPUT_FOLDER_BUTTON].update(disabled=False)
+
+    if values[Key.INPUT_FILE_PATH] and isinstance(values[Key.SELECTED_TEAM], Team):
+        path = Path(values[Key.INPUT_FILE_PATH])
+        file_ext = path.suffix
+        window[Key.OUTPUT_FILENAME].update(
+            f"{datetime.datetime.today():%d-%m-%Y}_"
+            f"{values[Key.SELECTED_TEAM].name.value.lower()}{file_ext}"
+        )
+
+        window[Key.GENERATE_LIST_BUTTON].update(disabled=False)
