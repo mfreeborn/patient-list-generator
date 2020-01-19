@@ -1,7 +1,5 @@
 import datetime
-import os
 import queue
-import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -10,9 +8,8 @@ import PySimpleGUI as sg
 from app.gui.enums import Key, Message
 from app.gui.events import EVENTS
 from app.gui.layout import main_layout
-from app.gui.utils import generate_list, log_gui_event, open_folder, set_text_invisible
-from app.main import main
-from app.teams import TEAMS, Team
+from app.gui.utils import log_gui_event, set_text_invisible
+from app.teams import Team
 
 sg.theme("Dark Blue 3")
 LOGS_DIR = Path.cwd() / "logs"
@@ -95,7 +92,6 @@ def run_gui():
             except queue.Empty:
                 pass
             else:
-                print(message)
                 if message == Message.START_GENERATING_LIST:
                     main_window[Key.GENERATE_LIST_BUTTON].update(
                         "GENERATING LIST...", disabled=True
@@ -105,10 +101,10 @@ def run_gui():
                     main_window[Key.GENERATE_LIST_BUTTON].update(
                         "Generate List", disabled=False
                     )
-                    main_window[Key.LIST_SUCCESS_TEXT].update(visible=True)
+                    main_window[Key.LIST_ERROR_TEXT].update(visible=True)
 
                 if message == Message.FINISH_GENERATING_LIST:
                     main_window[Key.GENERATE_LIST_BUTTON].update(
                         "Generate List", disabled=False
                     )
-                    main_window[Key.LIST_ERROR_TEXT].update(visible=True)
+                    main_window[Key.LIST_SUCCESS_TEXT].update(visible=True)

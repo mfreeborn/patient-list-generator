@@ -1,6 +1,7 @@
 import PySimpleGUI as sg
-from app.teams import TEAMS
+
 from app.gui.enums import Key
+from app.teams import TEAMS
 
 main_tab_layout = [
     [sg.Text("Choose input file:*")],
@@ -31,7 +32,9 @@ main_tab_layout = [
     [sg.InputText(disabled=True, key=Key.OUTPUT_FILENAME)],
     [
         sg.Button("Generate List", key=Key.GENERATE_LIST_BUTTON, disabled=True,),
-        sg.Button("Open Output Folder", key=Key.OPEN_OUTPUT_FOLDER_BUTTON, disabled=True),
+        sg.Button(
+            "Open Output Folder", key=Key.OPEN_OUTPUT_FOLDER_BUTTON, disabled=True
+        ),
     ],
     [
         sg.Text(

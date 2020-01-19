@@ -36,9 +36,7 @@ def handle_open_logs_folder_button(values, window, gui_queue, executor):
 
 
 def handle_generate_list_button(values, window, gui_queue, executor):
-    print('yo')
     if values[Key.SELECTED_TEAM] and values[Key.INPUT_FILE_PATH]:
-        print('there')
         executor.submit(generate_list, gui_queue, values)
 
 
@@ -64,6 +62,7 @@ def handle_set_credentials_button(values, window, gui_queue, executor):
         window[cred].update(values[cred].strip())
     window[Key.CREDENTIALS_SUCCESS_TEXT].update(visible=True)
 
+
 def handle_selected_team(values, window, gui_queue, executor):
     pass
 
@@ -76,5 +75,5 @@ EVENTS = {
     Key.GENERATE_LIST_BUTTON: handle_generate_list_button,
     Key.SAVE_LOGS_BUTTON: handle_save_logs_button,
     Key.SET_CREDENTIALS_BUTTON: handle_set_credentials_button,
-    Key.SELECTED_TEAM: handle_selected_team
+    Key.SELECTED_TEAM: handle_selected_team,
 }

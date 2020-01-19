@@ -1,23 +1,29 @@
 import datetime
 import os
 import subprocess
-from pprint import pprint
-from app.gui.enums import Key
 from pathlib import Path
+from pprint import pprint
+
+from app.gui.enums import Key, Message
+from app.main import main
+
 
 def generate_list(queue, values):
-    print('hi')
     team = values[Key.SELECTED_TEAM]
-    print(team)
-    try:
-        input_file_path = Path(values[Key.INPUT_FILE_PATH])
-    except Exception as e:
-        print(exception)
-    print(input_file_path)
+    input_file_path = Path(values[Key.INPUT_FILE_PATH])
     output_file_path = (
         Path(values[Key.OUTPUT_FOLDER_PATH]) / values[Key.OUTPUT_FILENAME]
     )
-    print(output_file_path)
+
+    credentials = {
+        cred: values[cred]
+        for cred in [
+            Key.CAREFLOW_USERNAME_INPUT,
+            Key.CAREFLOW_PASSWORD_INPUT,
+            Key.TRAKCARE_USERNAME_INPUT,
+            Key.TRAKCARE_PASSWORD_INPUT,
+        ]
+    }
     queue.put(Message.START_GENERATING_LIST)
     try:
         main(
@@ -29,9 +35,10 @@ def generate_list(queue, values):
 
     except Exception as e:
         print(e)
-        queue.put(Message.FINISH_GENERATING_LIST)
-    else:
         queue.put(Message.ERROR_GENERATING_LIST)
+        raise
+    else:
+        queue.put(Message.FINISH_GENERATING_LIST)
 
 
 def log_gui_event(event: str, values: dict):
@@ -40,8 +47,12 @@ def log_gui_event(event: str, values: dict):
     Specifically conceals sensitive information before printing."""
     # make a copy of the values dict so we don't overwrite anything permanently
     values = dict(values)
-    values[Key.CAREFLOW_PASSWORD_INPUT] = "*" * 5 if values[Key.CAREFLOW_PASSWORD_INPUT] else ""
-    values[Key.TRAKCARE_PASSWORD_INPUT] = "*" * 5 if values[Key.TRAKCARE_PASSWORD_INPUT] else ""
+    values[Key.CAREFLOW_PASSWORD_INPUT] = (
+        "*" * 5 if values[Key.CAREFLOW_PASSWORD_INPUT] else ""
+    )
+    values[Key.TRAKCARE_PASSWORD_INPUT] = (
+        "*" * 5 if values[Key.TRAKCARE_PASSWORD_INPUT] else ""
+    )
 
     print(f"{datetime.datetime.now():%Y-%m-%d %H:%M:%S}")
     print()
@@ -50,6 +61,7 @@ def log_gui_event(event: str, values: dict):
     print()
     print("-" * 30)
     print()
+
 
 def open_folder(path: str):
     if os.name == "nt":
