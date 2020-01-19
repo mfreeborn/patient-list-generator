@@ -1,5 +1,6 @@
 import datetime
 import os
+import queue
 import subprocess
 from pathlib import Path
 from pprint import pprint
@@ -44,7 +45,7 @@ def init_gui(window_title, layout, theme=None):
         theme = "Dark Blue 3"
     sg.theme(theme)
 
-    main_window = sg.Window("Patient List Generator", layout, finalize=True)
+    main_window = sg.Window(window_title, layout, finalize=True)
 
     # switch to the Credentials tab on startup
     main_window[Key.TAB_GROUP].Widget.select(1)
@@ -54,7 +55,7 @@ def init_gui(window_title, layout, theme=None):
     for cred in credential_keys:
         main_window[cred].bind("<Return>", Key.SET_CREDENTIALS_BUTTON)
 
-    return main_window
+    return main_window, queue.Queue()
 
 
 def log_gui_event(event: str, values: dict):

@@ -8,9 +8,10 @@ from app.gui.utils import init_gui, log_gui_event, set_text_invisible, update_gu
 
 
 def run_gui():
-    main_window = init_gui(window_title="Patient List Generator", layout=main_layout)
+    main_window, gui_queue = init_gui(
+        window_title="Patient List Generator", layout=main_layout
+    )
 
-    gui_queue = queue.Queue()
     with ThreadPoolExecutor(max_workers=1) as executor:
         while True:
             event, values = main_window.read(timeout=100)
