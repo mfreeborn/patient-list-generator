@@ -166,13 +166,13 @@ def test_merge_fails_with_diff_patients(patient):
 
 
 def test_patient_from_table_row():
-    class Cell:
+    class MockCell:
         def __init__(self, contents):
             self.text = contents
 
-    class Row:
+    class MockRow:
         def __init__(self, row):
-            self.cells = [Cell(text) for text in row]
+            self.cells = [MockCell(text) for text in row]
 
     row = [
         "1A",  # location
@@ -185,7 +185,7 @@ def test_patient_from_table_row():
         "7",  # bloods
     ]
 
-    pt = Patient.from_table_row(Row(row))
+    pt = Patient.from_table_row(MockRow(row))
 
     pt_dict = {
         "reason_for_admission": "Aspiration pneumonia",
@@ -202,7 +202,7 @@ def test_patient_from_table_row():
     row[1] = "pt details with no nhs number"
 
     with pytest.raises(ValueError):
-        Patient.from_table_row(Row(row))
+        Patient.from_table_row(MockRow(row))
 
 
 def test_patient_list_append(empty_patient_list, patient):
