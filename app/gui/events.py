@@ -1,6 +1,7 @@
 import datetime
 from pathlib import Path
 
+from app.gui import credential_keys
 from app.gui.enums import Key
 from app.gui.utils import generate_list, open_folder
 
@@ -52,13 +53,7 @@ def handle_save_logs_button(values, window, gui_queue, executor):
 
 
 def handle_set_credentials_button(values, window, gui_queue, executor):
-    for cred in [
-        Key.CAREFLOW_USERNAME_INPUT,
-        Key.CAREFLOW_PASSWORD_INPUT,
-        Key.TRAKCARE_USERNAME_INPUT,
-        Key.TRAKCARE_PASSWORD_INPUT,
-    ]:
-
+    for cred in credential_keys:
         window[cred].update(values[cred].strip())
     window[Key.CREDENTIALS_SUCCESS_TEXT].update(visible=True)
 

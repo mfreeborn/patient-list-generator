@@ -4,6 +4,9 @@ import subprocess
 from pathlib import Path
 from pprint import pprint
 
+import PySimpleGUI as sg
+
+from app.gui import credential_keys
 from app.gui.enums import Key, Message
 from app.main import main
 
@@ -15,16 +18,10 @@ def generate_list(queue, values):
         Path(values[Key.OUTPUT_FOLDER_PATH]) / values[Key.OUTPUT_FILENAME]
     )
 
-    credentials = {
-        cred: values[cred]
-        for cred in [
-            Key.CAREFLOW_USERNAME_INPUT,
-            Key.CAREFLOW_PASSWORD_INPUT,
-            Key.TRAKCARE_USERNAME_INPUT,
-            Key.TRAKCARE_PASSWORD_INPUT,
-        ]
-    }
+    credentials = {cred: values[cred] for cred in credential_keys}
+
     queue.put(Message.START_GENERATING_LIST)
+
     try:
         main(
             team=team,
@@ -32,13 +29,31 @@ def generate_list(queue, values):
             input_file_path=input_file_path,
             output_file_path=output_file_path,
         )
-
     except Exception as e:
         print(e)
         queue.put(Message.ERROR_GENERATING_LIST)
         raise
     else:
         queue.put(Message.FINISH_GENERATING_LIST)
+
+
+def init_gui(window_title, layout, theme=None):
+    """Helper function for initialising the gui."""
+    if theme is None:
+        theme = "Dark Blue 3"
+    sg.theme(theme)
+
+    main_window = sg.Window("Patient List Generator", layout, finalize=True)
+
+    # switch to the Credentials tab on startup
+    main_window[Key.TAB_GROUP].Widget.select(1)
+    main_window[Key.CAREFLOW_USERNAME_INPUT].set_focus()
+
+    # bind return key to credential input boxes
+    for cred in credential_keys:
+        main_window[cred].bind("<Return>", Key.SET_CREDENTIALS_BUTTON)
+
+    return main_window
 
 
 def log_gui_event(event: str, values: dict):

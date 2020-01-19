@@ -5,7 +5,7 @@ from enum import Enum, unique
 class Key(Enum):
     """Enumerations for each gui component key."""
 
-    CAREFLOW_PASSWORD_INPUT = "Careflow_password_input"
+    CAREFLOW_PASSWORD_INPUT = "careflow_password_input"
     CAREFLOW_USERNAME_INPUT = "careflow_username_input"
     CREDENTIALS_SUCCESS_TEXT = "credentials_success_text"
     GENERATE_LIST_BUTTON = "generate_list_button"

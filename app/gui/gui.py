@@ -3,36 +3,19 @@ import queue
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-import PySimpleGUI as sg
-
+from app.gui import credential_keys
 from app.gui.enums import Key, Message
 from app.gui.events import EVENTS
 from app.gui.layout import main_layout
-from app.gui.utils import log_gui_event, set_text_invisible
+from app.gui.utils import init_gui, log_gui_event, set_text_invisible
 from app.teams import Team
 
-sg.theme("Dark Blue 3")
 LOGS_DIR = Path.cwd() / "logs"
 LOGS_DIR.mkdir(exist_ok=True)
 
-credentials = {
-    Key.CAREFLOW_USERNAME_INPUT: "",
-    Key.CAREFLOW_PASSWORD_INPUT: "",
-    Key.TRAKCARE_USERNAME_INPUT: "",
-    Key.TRAKCARE_PASSWORD_INPUT: "",
-}
-
 
 def run_gui():
-    main_window = sg.Window("Patient List Generator", main_layout, finalize=True)
-
-    # switch to the Credentials tab on startup
-    main_window[Key.TAB_GROUP].Widget.select(1)
-    main_window[Key.CAREFLOW_USERNAME_INPUT].set_focus()
-
-    # bind return key to credential input boxes
-    for cred in credentials:
-        main_window[cred].bind("<Return>", Key.SET_CREDENTIALS_BUTTON)
+    main_window = init_gui(window_title="Patient List Generator", layout=main_layout)
 
     gui_queue = queue.Queue()
     with ThreadPoolExecutor(max_workers=1) as executor:
@@ -54,15 +37,7 @@ def run_gui():
 
                 EVENTS[event](values, main_window, gui_queue, executor)
 
-                if all(
-                    values[cred]
-                    for cred in [
-                        Key.CAREFLOW_USERNAME_INPUT,
-                        Key.CAREFLOW_PASSWORD_INPUT,
-                        Key.TRAKCARE_USERNAME_INPUT,
-                        Key.TRAKCARE_PASSWORD_INPUT,
-                    ]
-                ):
+                if all(values[cred] for cred in credential_keys):
                     main_window[Key.SET_CREDENTIALS_BUTTON].update("Update Credentials")
                 else:
                     main_window[Key.SET_CREDENTIALS_BUTTON].update("Set Credentials")
