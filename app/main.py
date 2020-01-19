@@ -14,7 +14,10 @@ def main(
         output_file_path = (
             input_file_path.parent / f"{datetime.date.today():%d-%m-%Y}_{team}".lower()
         ).with_suffix(file_ext)
-
+    print(team)
+    print(credentials)
+    print(input_file_path)
+    print(output_file_path)
     handover_list = HandoverList(team=team, file_path=input_file_path)
     handover_list.update(credentials=credentials)
     handover_list.save(output_file_path)

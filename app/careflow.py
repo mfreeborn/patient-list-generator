@@ -8,6 +8,7 @@ from app.exceptions import (
     CareFlowError,
     NoCareFlowCredentialsError,
 )
+from app.gui.enums import Key
 from app.patient import Location, Patient, PatientList
 from app.teams import Team
 
@@ -22,8 +23,8 @@ def _main(team: Team, credentials: dict):
         s.headers.update({"CSRF-Token": csrf_token})
 
         username, password = (
-            credentials["careflow_username"],
-            credentials["careflow_password"],
+            credentials[Key.CAREFLOW_USERNAME_INPUT],
+            credentials[Key.CAREFLOW_PASSWORD_INPUT],
         )
 
         if not (username and password):
