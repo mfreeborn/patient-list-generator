@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from requests_html import HTMLSession
 
 from app.exceptions import NoTrakCareCredentialsError, TrakCareAuthorisationError
@@ -6,6 +8,7 @@ from app.patient import Patient, PatientList
 
 
 def _login_to_trakcare(credentials, session):
+    print("logging in to trak")
     s = session
     url = "https://live.ennd.mpls.hs.intersystems.thirdparty.nhs.uk/trakcare/csp/logon.csp"
 
@@ -50,6 +53,7 @@ def _login_to_trakcare(credentials, session):
 
 
 def _get_reason_for_admission(patient: Patient, page_id, session) -> PatientList:
+    print("getting reason for admission for:", patient)
     s = session
     url = "https://live.ennd.mpls.hs.intersystems.thirdparty.nhs.uk/trakcare/csp/websys.csp"
 
@@ -123,15 +127,21 @@ def _get_reason_for_admission(patient: Patient, page_id, session) -> PatientList
 
 
 def get_reason_for_admissions(patients, credentials):
-    s = HTMLSession()
+    with HTMLSession() as s:
+        s, page_id = _login_to_trakcare(credentials, s)
 
-    s, page_id = _login_to_trakcare(credentials, s)
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            futures = {
+                executor.submit(_get_reason_for_admission, patient, page_id, s): patient
+                for patient in patients
+            }
 
-    for patient in patients:
-        try:
-            patient.reason_for_admission = _get_reason_for_admission(patient, s)
-        except Exception as e:
-            # we'll just skip past any errors and leave the .reason_for_admission blank
-            print(e)
+            for future in as_completed(futures):
+                patient = futures[future]
+                try:
+                    patient.reason_for_admission = future.result()
+                except Exception as e:
+                    # we'll just skip past any errors and leave the .reason_for_admission blank
+                    print(e)
 
-    return patients
+        return patients

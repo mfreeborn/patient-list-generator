@@ -128,9 +128,6 @@ class HandoverList:
             if careflow_patient not in self.patients:
                 # patient must be new to the team
                 careflow_patient.is_new = True
-                # TODO: set 'reason_for_admission' here
-                # careflow_patient.reason_for_admission = get_reason_for_admission(careflow_patient,
-                #                                                                  credentials)
                 updated_list.append(careflow_patient)
             else:
                 # patient must be on the original list, therefore merge the
@@ -140,7 +137,7 @@ class HandoverList:
                 careflow_patient.merge(self.patients[careflow_patient.nhs_number])
                 updated_list.append(careflow_patient)
 
-        # get_reason_for_admissions([pt for pt in updated_list if pt.is_new], credentials)
+        get_reason_for_admissions([pt for pt in updated_list if pt.is_new], credentials)
 
         updated_list.sort()
         self.patients = updated_list
