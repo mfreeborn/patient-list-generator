@@ -9,6 +9,7 @@ from app.careflow import get_careflow_patients
 from app.enums import Ward
 from app.patient import Patient, PatientList
 from app.teams import Team
+from app.trakcare import get_reason_for_admissions
 
 
 class HandoverTable:
@@ -138,6 +139,8 @@ class HandoverList:
                 # up to date incase they were moved since yesterday
                 careflow_patient.merge(self.patients[careflow_patient.nhs_number])
                 updated_list.append(careflow_patient)
+
+        # get_reason_for_admissions([pt for pt in updated_list if pt.is_new], credentials)
 
         updated_list.sort()
         self.patients = updated_list

@@ -1,4 +1,6 @@
-import datetime
+import logging
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from requests_html import HTMLSession
 
@@ -9,96 +11,104 @@ from app.exceptions import (
     NoCareFlowCredentialsError,
 )
 from app.gui.enums import Key
-from app.patient import Location, Patient, PatientList
+from app.patient import Patient, PatientList
 from app.teams import Team
 
 CAREFLOW_URL = "https://connect.careflowapp.com/#/SignIn"
 AUTH_URL = "https://connect.careflowapp.com/authenticate"
 
 
+def _login_to_careflow(session, credentials):
+    r = session.get(CAREFLOW_URL)
+    csrf_token = r.html.find("[name='csrf-token']", first=True).attrs["content"]
+    session.headers.update({"CSRF-Token": csrf_token})
+
+    username, password = (
+        credentials.get(Key.CAREFLOW_USERNAME_INPUT),
+        credentials.get(Key.CAREFLOW_PASSWORD_INPUT),
+    )
+
+    if not (username and password):
+        raise NoCareFlowCredentialsError(
+            "Credentials for logging into Careflow are missing."
+        )
+
+    payload = {
+        "client_id": "DocComMobile",
+        "emailAddress": username,
+        "password": password,
+        "redirect_uri": "http://careflowconnect.com",
+        "response_type": "token",
+    }
+
+    r = session.post(AUTH_URL, json=payload)
+
+    try:
+        token = r.headers["access_token"]
+    except KeyError:
+        raise CareFlowAuthorisationError(
+            "Error logging into Careflow, are your credentials definitely correct?"
+        )
+
+    session.headers.update({"Authorization": f"Bearer  {token}"})
+    return session
+
+
+def _fetch_patients_by_consultant(session, consultant) -> list:
+    start = time.time()
+    pt_search_url = (
+        "https://appapi.careflowapp.com/patients/SearchForPatientsByPopulation"
+    )
+
+    search_params = {
+        "networkId": 1123,
+        "clinician": consultant.value,
+        "skip": 0,
+        "take": 50,
+    }
+
+    allowed_wards = {ward.value for ward in Ward}
+
+    r = session.get(pt_search_url, params=search_params)
+    data = r.json()
+    patients = data["Data"]["Patients"]
+    patients = [
+        Patient.from_careflow_api(pt)
+        for pt in patients
+        if pt["AreaName"] in allowed_wards  # ignore patients on e.g. MAU
+        and pt["Bed"]  # patient must have a bed allocation
+    ]
+    print(consultant.value, time.time() - start)
+    return patients
+
+
 def _main(team: Team, credentials: dict):
     with HTMLSession() as s:
-        r = s.get(CAREFLOW_URL)
-        csrf_token = r.html.find("[name='csrf-token']", first=True).attrs["content"]
-        s.headers.update({"CSRF-Token": csrf_token})
+        _login_to_careflow(s, credentials)
 
-        username, password = (
-            credentials[Key.CAREFLOW_USERNAME_INPUT],
-            credentials[Key.CAREFLOW_PASSWORD_INPUT],
-        )
-
-        if not (username and password):
-            raise NoCareFlowCredentialsError(
-                "No credentials were found to log into CareFlow"
-            )
-
-        payload = {
-            "client_id": "DocComMobile",
-            "emailAddress": username,
-            "password": password,
-            "redirect_uri": "http://careflowconnect.com",
-            "response_type": "token",
-        }
-
-        r = s.post(AUTH_URL, json=payload)
-
-        try:
-            token = r.headers["access_token"]
-        except KeyError:
-            raise CareFlowAuthorisationError(
-                "Error logging into Careflow, are your credentials definitely correct?"
-            )
-
-        s.headers.update({"Authorization": f"Bearer  {token}"})
-
-        pt_search_url = (
-            "https://appapi.careflowapp.com/patients/SearchForPatientsByPopulation"
-        )
-
-        search_params = {
-            "networkId": 1123,
-            "clinician": "",
-            "skip": 0,
-            "take": 50,
-        }
-
-        allowed_wards = {ward.value for ward in Ward}
-        patient_list = PatientList(home_ward=team.home_ward)
-        for consultant in team.consultants:
-            search_params["clinician"] = consultant.value
-            r = s.get(pt_search_url, params=search_params)
-            data = r.json()
-            patients = data["Data"]["Patients"]
-            patients = [
-                # TODO: extract this out into a classmethod on Patient
-                Patient(
-                    given_name=pt["PatientGivenName"],
-                    surname=pt["PatientFamilyName"],
-                    dob=datetime.datetime.strptime(
-                        pt["PatientDateOfBirth"], "%d-%b-%Y"
-                    ).date(),
-                    nhs_number=pt["PatientNHSNumber"],
-                    location=Location(
-                        ward=Ward(pt["AreaName"]), bay=pt["Bay"], bed=pt["Bed"]
-                    ),
-                )
-                for pt in patients
-                if pt["AreaName"] in allowed_wards  # ignore patients on e.g. MAU
-                and pt["Bed"]  # patient must have a bed allocation
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = [
+                executor.submit(_fetch_patients_by_consultant, s, consultant)
+                for consultant in team.consultants
             ]
 
-            patient_list.extend(patients)
+        patient_list = PatientList(home_ward=team.home_ward)
+        for future in as_completed(futures):
+            patient_list.extend(future.result())
 
     return patient_list
 
 
 def get_careflow_patients(team: Team, credentials: dict):
     try:
+        start = time.time()
         careflow_pts = _main(team=team, credentials=credentials)
     # re-raise any specific exceptions first, before raising a generic exception
     except (CareFlowAuthorisationError, NoCareFlowCredentialsError):
         raise
-    except:  # noqa
+    except Exception as e:  # noqa
+        logging.exception(e)
         raise CareFlowError("Error getting patients from CareFlow")
     else:
+        print("TOTAL", time.time() - start)
         return careflow_pts

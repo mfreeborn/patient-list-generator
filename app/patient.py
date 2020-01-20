@@ -215,6 +215,26 @@ class Patient:
             return self.location.bed
 
     @classmethod
+    def from_careflow_api(cls, careflow_pt) -> "Patient":
+        """Return a Patient object from the json provided by the CareFlow API."""
+
+        pt = cls(
+            given_name=careflow_pt["PatientGivenName"],
+            surname=careflow_pt["PatientFamilyName"],
+            dob=datetime.datetime.strptime(
+                careflow_pt["PatientDateOfBirth"], "%d-%b-%Y"
+            ).date(),
+            nhs_number=careflow_pt["PatientNHSNumber"],
+            location=Location(
+                ward=Ward(careflow_pt["AreaName"]),
+                bay=careflow_pt["Bay"],
+                bed=careflow_pt["Bed"],
+            ),
+        )
+
+        return pt
+
+    @classmethod
     def from_table_row(cls, row: _Row) -> "Patient":
         """Return a Patient object from the information held in a table row.
 

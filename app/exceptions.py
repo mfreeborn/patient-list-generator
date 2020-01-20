@@ -8,3 +8,15 @@ class NoCareFlowCredentialsError(CareFlowError):
 
 class CareFlowAuthorisationError(CareFlowError):
     pass
+
+
+class TrakCareError(Exception):
+    pass
+
+
+class NoTrakCareCredentialsError(TrakCareError):
+    pass
+
+
+class TrakCareAuthorisationError(TrakCareError):
+    pass
