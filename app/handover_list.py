@@ -1,3 +1,5 @@
+import logging
+
 from docx import Document
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
@@ -118,6 +120,19 @@ class HandoverList:
 
         return pt_list
 
+    @property
+    def patient_count(self):
+        return len(self.patients)
+
+    @property
+    def new_patient_count(self):
+        return sum(patient.is_new for patient in self.patients)
+
+    @property
+    def _handover_table(self):
+        """Return the underlying Word document table"""
+        return HandoverTable(self.tables[0])
+
     def _update_patients(self, credentials):
         updated_list = PatientList(home_ward=self.team.home_ward)
         latest_careflow_pts = get_careflow_patients(
@@ -141,17 +156,12 @@ class HandoverList:
                 [pt for pt in updated_list if pt.is_new], credentials
             )
         except Exception as e:
-            import logging
-
+            # Trakcare is flakey - have a low threshold for passing over exceptions
+            # and just skip getting the .reason_for_admission
             logging.exception(e)
 
         updated_list.sort()
         self.patients = updated_list
-
-    @property
-    def _handover_table(self):
-        """Return the underlying Word document table"""
-        return HandoverTable(self.tables[0])
 
     def _update_handover_table(self):
         table = self._handover_table
@@ -189,11 +199,3 @@ class HandoverList:
         """
         self._update_patients(credentials=credentials)
         self._update_handover_table()
-
-    @property
-    def patient_count(self):
-        return len(self.patients)
-
-    @property
-    def new_patient_count(self):
-        return sum(patient.is_new for patient in self.patients)

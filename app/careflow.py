@@ -19,10 +19,6 @@ AUTH_URL = "https://connect.careflowapp.com/authenticate"
 
 
 def _login_to_careflow(session, credentials):
-    r = session.get(CAREFLOW_URL)
-    csrf_token = r.html.find("[name='csrf-token']", first=True).attrs["content"]
-    session.headers.update({"CSRF-Token": csrf_token})
-
     username, password = (
         credentials.get(Key.CAREFLOW_USERNAME_INPUT),
         credentials.get(Key.CAREFLOW_PASSWORD_INPUT),
@@ -32,6 +28,10 @@ def _login_to_careflow(session, credentials):
         raise NoCareFlowCredentialsError(
             "Credentials for logging into Careflow are missing."
         )
+
+    r = session.get(CAREFLOW_URL)
+    csrf_token = r.html.find("[name='csrf-token']", first=True).attrs["content"]
+    session.headers.update({"CSRF-Token": csrf_token})
 
     payload = {
         "client_id": "DocComMobile",
@@ -75,7 +75,7 @@ def _fetch_patients_by_consultant(session, consultant) -> list:
     patients = [
         Patient.from_careflow_api(pt)
         for pt in patients
-        if pt["AreaName"] in allowed_wards  # ignore patients on e.g. MAU
+        if pt["AreaName"] in allowed_wards  # ignore patients on e.g. MAU and ITU
         and pt["Bed"]  # patient must have a bed allocation
     ]
     logging.debug(consultant.value, time.time() - start)
