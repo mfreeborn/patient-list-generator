@@ -3,7 +3,7 @@ from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.oxml import parse_xml
 from docx.oxml.ns import nsdecls
-from docx.shared import Pt, Inches
+from docx.shared import Inches, Pt
 
 from app.careflow import get_careflow_patients
 from app.enums import Ward
@@ -36,7 +36,7 @@ class HandoverTable:
 
         new_patient_row.cells[0].text = patient.bed
         new_patient_row.cells[1].text = patient.patient_details
-        new_patient_row.cells[2].text = patient.reason_for_admission
+        new_patient_row.cells[2].text = patient.reason_for_admission or ""
         new_patient_row.cells[3].text = patient.jobs
         new_patient_row.cells[4].text = patient.edd
         new_patient_row.cells[5].text = patient.ds
@@ -136,8 +136,14 @@ class HandoverList:
                 # up to date incase they were moved since yesterday
                 careflow_patient.merge(self.patients[careflow_patient.nhs_number])
                 updated_list.append(careflow_patient)
+        try:
+            get_reason_for_admissions(
+                [pt for pt in updated_list if pt.is_new], credentials
+            )
+        except Exception as e:
+            import logging
 
-        get_reason_for_admissions([pt for pt in updated_list if pt.is_new], credentials)
+            logging.exception(e)
 
         updated_list.sort()
         self.patients = updated_list

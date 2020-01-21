@@ -78,7 +78,7 @@ def _fetch_patients_by_consultant(session, consultant) -> list:
         if pt["AreaName"] in allowed_wards  # ignore patients on e.g. MAU
         and pt["Bed"]  # patient must have a bed allocation
     ]
-    print(consultant.value, time.time() - start)
+    logging.debug(consultant.value, time.time() - start)
     return patients
 
 
@@ -110,5 +110,5 @@ def get_careflow_patients(team: Team, credentials: dict):
         logging.exception(e)
         raise CareFlowError("Error getting patients from CareFlow")
     else:
-        print("TOTAL", time.time() - start)
+        logging.debug("TOTAL", time.time() - start)
         return careflow_pts
