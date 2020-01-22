@@ -88,7 +88,8 @@ class HandoverTable:
 
 
 class HandoverList:
-    def __init__(self, team: Team, file_path=None):
+    def __init__(self, team: Team, file_path):
+        logging.debug("Instantiating HandoverList using %s", file_path)
         self.doc = Document(docx=file_path)
         self.team = team
         self.patients: PatientList = self._parse_patients()
@@ -118,6 +119,7 @@ class HandoverList:
             pt = Patient.from_table_row(row)
             pt_list.append(pt)
 
+        logging.debug("%d patients found on the input patient list", len(pt_list))
         return pt_list
 
     @property

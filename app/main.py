@@ -1,4 +1,5 @@
 import datetime
+import logging
 from pathlib import Path
 
 from app.enums import TeamName
@@ -18,6 +19,7 @@ def main(
     handover_list = HandoverList(team=team, file_path=input_file_path)
     handover_list.update(credentials=credentials)
     handover_list.save(output_file_path)
+    logging.debug("List updating complete")
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
 import datetime
+import logging
 import os
 import queue
 import subprocess
@@ -41,6 +42,7 @@ def generate_list(queue, values):
 
 def init_gui(window_title, layout, theme=None):
     """Helper function for initialising the gui."""
+    logging.debug("Initialising GUI")
     if theme is None:
         theme = "Dark Blue 3"
     sg.theme(theme)

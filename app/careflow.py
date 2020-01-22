@@ -19,6 +19,7 @@ AUTH_URL = "https://connect.careflowapp.com/authenticate"
 
 
 def _login_to_careflow(session, credentials):
+    logging.debug("Logging into CareFlow")
     username, password = (
         credentials.get(Key.CAREFLOW_USERNAME_INPUT),
         credentials.get(Key.CAREFLOW_PASSWORD_INPUT),
@@ -55,6 +56,7 @@ def _login_to_careflow(session, credentials):
 
 
 def _fetch_patients_by_consultant(session, consultant) -> list:
+    logging.debug("Fetching patients under %s", consultant.value)
     start = time.time()
     pt_search_url = (
         "https://appapi.careflowapp.com/patients/SearchForPatientsByPopulation"
@@ -78,7 +80,12 @@ def _fetch_patients_by_consultant(session, consultant) -> list:
         if pt["AreaName"] in allowed_wards  # ignore patients on e.g. MAU and ITU
         and pt["Bed"]  # patient must have a bed allocation
     ]
-    logging.debug(consultant.value, time.time() - start)
+    logging.debug(
+        "%d patients found under %s in %.2fs",
+        len(patients),
+        consultant.value,
+        time.time() - start,
+    )
     return patients
 
 
@@ -110,5 +117,5 @@ def get_careflow_patients(team: Team, credentials: dict):
         logging.exception(e)
         raise CareFlowError("Error getting patients from CareFlow")
     else:
-        logging.debug("TOTAL", time.time() - start)
+        logging.debug("TOTAL: %.2fs", time.time() - start)
         return careflow_pts
