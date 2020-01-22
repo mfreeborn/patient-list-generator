@@ -1,18 +1,40 @@
 import datetime
+import logging
 from pathlib import Path
 
+from app.enums import TeamName
 from app.gui import LOGS_DIR, credential_keys
 from app.gui.enums import Key
 from app.gui.utils import generate_list, open_folder
+from app.teams import TEAMS
+
+logger = logging.getLogger("PLG")
 
 
 def handle_input_file_path(values, window, gui_queue, executor):
     if values[Key.INPUT_FILE_PATH]:
         path = Path(values[Key.INPUT_FILE_PATH])
         window[Key.INPUT_FILE_PATH].update(path)
-        parent_path = path.parent
+
+        # see if we can parse out the name of the team to set the
+        # selected_team element as a convenience
+        filename = path.stem
+        file_ext = path.suffix
+        team_name = filename.split("_")[-1].capitalize()
+
+        try:
+            team = TEAMS[TeamName(team_name)]
+        except ValueError:
+            pass
+        else:
+            window[Key.SELECTED_TEAM].update(team)
+            window[Key.OUTPUT_FILENAME].update(
+                f"{datetime.datetime.today():%d-%m-%Y}_"
+                f"{team.name.value.lower()}{file_ext}"
+            )
 
         if not values[Key.OUTPUT_FOLDER_PATH]:
+            parent_path = path.parent
             window[Key.OUTPUT_FOLDER_PATH].update(parent_path)
             window[Key.OPEN_OUTPUT_FOLDER_BUTTON].update(disabled=False)
 
@@ -47,6 +69,7 @@ def handle_save_logs_button(values, window, gui_queue, executor):
     with open(file_path, "w") as fh:
         fh.writelines(logs)
 
+    logger.debug("Logs saved to %s", file_path)
     window[Key.LOGS_SUCCESS_TEXT].update(f"Logs saved to:\n{file_path}", visible=True)
 
 

@@ -4,7 +4,6 @@ import os
 import queue
 import subprocess
 from pathlib import Path
-from pprint import pprint
 
 import PySimpleGUI as sg
 
@@ -12,6 +11,7 @@ from app.gui import credential_keys
 from app.gui.enums import Key, Message
 from app.main import main
 from app.teams import Team
+from app.utils import formatter
 
 logger = logging.getLogger("PLG")
 
@@ -50,6 +50,11 @@ def init_gui(window_title, layout, theme=None):
 
     main_window = sg.Window(window_title, layout, finalize=True)
 
+    # configure logging output to go to the Output element
+    tk_streamhandler = logging.StreamHandler(main_window[Key.OUTPUT_WINDOW].TKOut)
+    tk_streamhandler.setFormatter(formatter)
+    logger.addHandler(tk_streamhandler)
+
     # switch to the Credentials tab on startup
     main_window[Key.TAB_GROUP].Widget.select(1)
     main_window[Key.CAREFLOW_USERNAME_INPUT].set_focus()
@@ -73,14 +78,13 @@ def log_gui_event(event: str, values: dict):
     values[Key.TRAKCARE_PASSWORD_INPUT] = (
         "*" * 5 if values[Key.TRAKCARE_PASSWORD_INPUT] else ""
     )
+    values = {key.value: value for key, value in values.items() if isinstance(key, Key)}
 
-    print(f"{datetime.datetime.now():%Y-%m-%d %H:%M:%S}")
-    print()
-    print(event)
-    pprint(values)
-    print()
-    print("-" * 30)
-    print()
+    logger.debug(
+        "Event '%s' received with the values:\n{%s}",
+        event,
+        "\n".join(f"{key!r}: {value!r}" for key, value in values.items()),
+    )
 
 
 def open_folder(path: str):
