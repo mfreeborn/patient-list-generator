@@ -1,5 +1,6 @@
 import logging
 import queue
+import time
 from concurrent.futures import ThreadPoolExecutor
 
 from app.gui.enums import Key, Message
@@ -46,9 +47,12 @@ def run_gui():
             else:
                 logger.debug("Message received in gui_queue: %s", message)
                 if message == Message.START_GENERATING_LIST:
+                    logger.debug("start disabling button")
+                    time.perf_counter()
                     main_window[Key.GENERATE_LIST_BUTTON].update(
                         "GENERATING LIST...", disabled=True
                     )
+                    logger.debug("button disabled after %.3fs", time.perf_counter())
 
                 if message == Message.ERROR_GENERATING_LIST:
                     main_window[Key.GENERATE_LIST_BUTTON].update(

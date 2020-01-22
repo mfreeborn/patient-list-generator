@@ -6,6 +6,8 @@ from app.enums import TeamName
 from app.handover_list import HandoverList
 from app.teams import TEAMS, Team
 
+logger = logging.getLogger("PLG")
+
 
 def main(
     team: Team, credentials: dict, input_file_path: Path, output_file_path: Path = None
@@ -19,7 +21,7 @@ def main(
     handover_list = HandoverList(team=team, file_path=input_file_path)
     handover_list.update(credentials=credentials)
     handover_list.save(output_file_path)
-    logging.debug("List updating complete")
+    logger.debug("List updating complete")
 
 
 if __name__ == "__main__":

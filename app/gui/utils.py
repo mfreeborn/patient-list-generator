@@ -3,6 +3,7 @@ import logging
 import os
 import queue
 import subprocess
+import time
 from pathlib import Path
 
 import PySimpleGUI as sg
@@ -24,9 +25,10 @@ def generate_list(queue, values):
     )
 
     credentials = {cred: values[cred] for cred in credential_keys}
-
     queue.put(Message.START_GENERATING_LIST)
-
+    # this sleep gives just enough time for the context to switch back to the main gui thread,
+    # allowing it to update the gui in response to the sent message more responsively.
+    time.sleep(0.01)
     try:
         main(
             team=team,
@@ -81,9 +83,9 @@ def log_gui_event(event: str, values: dict):
     values = {key.value: value for key, value in values.items() if isinstance(key, Key)}
 
     logger.debug(
-        "Event '%s' received with the values:\n{%s}",
+        "Event '%s' received with the values:\n\t{%s}",
         event,
-        "\n".join(f"{key!r}: {value!r}" for key, value in values.items()),
+        "\n\t".join(f"{key!r}: {value!r}" for key, value in values.items()),
     )
 
 

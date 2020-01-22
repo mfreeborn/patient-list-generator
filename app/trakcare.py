@@ -9,9 +9,8 @@ from app.patient import Patient, PatientList
 logger = logging.getLogger("PLG")
 
 
-def _login_to_trakcare(credentials, session):
+def _login_to_trakcare(credentials: dict, session: HTMLSession):
     logger.debug("Logging into TrakCare")
-    s = session
     url = "https://live.ennd.mpls.hs.intersystems.thirdparty.nhs.uk/trakcare/csp/logon.csp"
 
     username, password = (
@@ -24,7 +23,7 @@ def _login_to_trakcare(credentials, session):
             "Credentials for logging into TrakCare are missing."
         )
 
-    r = s.post(
+    r = session.post(
         url,
         data={
             "USERNAME": username,
@@ -40,9 +39,11 @@ def _login_to_trakcare(credentials, session):
         },
     )
 
+    # TODO: try moving this request to the `_get_reason_for_admission` function and then retry
+    # multithreading
     url = "https://live.ennd.mpls.hs.intersystems.thirdparty.nhs.uk/trakcare/csp/epr.frames.csp?RELOGON=1"
 
-    r = s.get(url)
+    r = session.get(url)
     try:
         page_id = r.html.find("#TRAK_main", first=True).attrs["src"].split("=")[-1]
     except:  # noqa
@@ -140,6 +141,11 @@ def get_reason_for_admissions(patients, credentials):
             try:
                 patient.reason_for_admission = _get_reason_for_admission(
                     patient, page_id, s
+                )
+                logger.debug(
+                    "Fetched reason for admission for %s. Reason for admission:\n",
+                    patient,
+                    patient.reason_for_admission,
                 )
             except Exception as e:
                 # we'll just skip past any errors and leave the .reason_for_admission blank

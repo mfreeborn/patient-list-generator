@@ -32,6 +32,7 @@ def handle_input_file_path(values, window, gui_queue, executor):
                 f"{datetime.datetime.today():%d-%m-%Y}_"
                 f"{team.name.value.lower()}{file_ext}"
             )
+            window[Key.GENERATE_LIST_BUTTON].update(disabled=False)
 
         if not values[Key.OUTPUT_FOLDER_PATH]:
             parent_path = path.parent
@@ -76,6 +77,8 @@ def handle_save_logs_button(values, window, gui_queue, executor):
 def handle_set_credentials_button(values, window, gui_queue, executor):
     for cred in credential_keys:
         window[cred].update(values[cred].strip())
+
+    logger.debug("Credentials have been set")
     window[Key.CREDENTIALS_SUCCESS_TEXT].update(visible=True)
 
 

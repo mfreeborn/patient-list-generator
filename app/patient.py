@@ -89,7 +89,7 @@ class PatientList:
     def __repr__(self):
         return (
             f"<{self.__class__.__name__}(home_ward={self.home_ward.value}, "
-            f"length={len(self._patient_mapping)})>"
+            f"patient_count={len(self)}, new_patient_count={len([pt for pt in self if pt.is_new])})>"
         )
 
 

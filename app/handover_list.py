@@ -137,7 +137,7 @@ class HandoverList:
         """Return the underlying Word document table"""
         return HandoverTable(self.tables[0])
 
-    def _update_patients(self, credentials):
+    def _update_patients(self, credentials: dict) -> None:
         updated_list = PatientList(home_ward=self.team.home_ward)
         latest_careflow_pts = get_careflow_patients(
             team=self.team, credentials=credentials
@@ -166,6 +166,7 @@ class HandoverList:
 
         updated_list.sort()
         self.patients = updated_list
+        logger.debug("Patient list updated: %s", self.patients)
 
     def _update_handover_table(self):
         table = self._handover_table
