@@ -1,3 +1,4 @@
+import logging
 import queue
 from concurrent.futures import ThreadPoolExecutor
 
@@ -8,6 +9,7 @@ from app.gui.utils import init_gui, log_gui_event, set_text_invisible, update_gu
 
 
 def run_gui():
+    logger = logging.getLogger("PLG")
     main_window, gui_queue = init_gui(
         window_title="Patient List Generator", layout=main_layout
     )
@@ -28,8 +30,11 @@ def run_gui():
                 # this is a bound event
                 if isinstance(event, tuple):
                     event = event[1]
-
-                EVENTS[event](values, main_window, gui_queue, executor)
+                try:
+                    logger.debug("Executing %s", EVENTS[event].__name__)
+                    EVENTS[event](values, main_window, gui_queue, executor)
+                except Exception as e:
+                    logger.exception(e)
 
                 update_gui(values=values, window=main_window)
 
@@ -39,6 +44,7 @@ def run_gui():
             except queue.Empty:
                 pass
             else:
+                logger.debug("Message received in gui_queue: %s", message)
                 if message == Message.START_GENERATING_LIST:
                     main_window[Key.GENERATE_LIST_BUTTON].update(
                         "GENERATING LIST...", disabled=True

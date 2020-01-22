@@ -13,6 +13,8 @@ from app.gui.enums import Key, Message
 from app.main import main
 from app.teams import Team
 
+logger = logging.getLogger("PLG")
+
 
 def generate_list(queue, values):
     team = values[Key.SELECTED_TEAM]
@@ -33,9 +35,8 @@ def generate_list(queue, values):
             output_file_path=output_file_path,
         )
     except Exception as e:
-        print(e)
         queue.put(Message.ERROR_GENERATING_LIST)
-        raise
+        logger.exception(e)
     else:
         queue.put(Message.FINISH_GENERATING_LIST)
 
@@ -120,4 +121,5 @@ def update_gui(values, window):
             f"{values[Key.SELECTED_TEAM].name.value.lower()}{file_ext}"
         )
 
-        window[Key.GENERATE_LIST_BUTTON].update(disabled=False)
+        if window[Key.GENERATE_LIST_BUTTON].get_text().lower() != "generating list...":
+            window[Key.GENERATE_LIST_BUTTON].update(disabled=False)

@@ -6,9 +6,11 @@ from app.exceptions import NoTrakCareCredentialsError, TrakCareAuthorisationErro
 from app.gui.enums import Key
 from app.patient import Patient, PatientList
 
+logger = logging.getLogger("PLG")
+
 
 def _login_to_trakcare(credentials, session):
-    logging.debug("Logging into TrakCare")
+    logger.debug("Logging into TrakCare")
     s = session
     url = "https://live.ennd.mpls.hs.intersystems.thirdparty.nhs.uk/trakcare/csp/logon.csp"
 
@@ -52,7 +54,7 @@ def _login_to_trakcare(credentials, session):
 
 
 def _get_reason_for_admission(patient: Patient, page_id, session) -> PatientList:
-    logging.debug("Getting reason for admission for %s", patient.list_name)
+    logger.debug("Getting reason for admission for %s", patient.list_name)
     s = session
     url = "https://live.ennd.mpls.hs.intersystems.thirdparty.nhs.uk/trakcare/csp/websys.csp"
 
@@ -83,7 +85,7 @@ def _get_reason_for_admission(patient: Patient, page_id, session) -> PatientList
             latest_inpatient_episode = row
             break
     else:
-        logging.debug(
+        logger.debug(
             "Failed to find current inpatient episode for %s. Is it on the second"
             "page of Patient Enquiry?",
             patient.list_name,
@@ -141,5 +143,5 @@ def get_reason_for_admissions(patients, credentials):
                 )
             except Exception as e:
                 # we'll just skip past any errors and leave the .reason_for_admission blank
-                logging.exception(e)
+                logger.exception(e)
     return patients

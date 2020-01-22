@@ -14,12 +14,14 @@ from app.gui.enums import Key
 from app.patient import Patient, PatientList
 from app.teams import Team
 
+logger = logging.getLogger("PLG")
+
 CAREFLOW_URL = "https://connect.careflowapp.com/#/SignIn"
 AUTH_URL = "https://connect.careflowapp.com/authenticate"
 
 
 def _login_to_careflow(session, credentials):
-    logging.debug("Logging into CareFlow")
+    logger.debug("Logging into CareFlow")
     username, password = (
         credentials.get(Key.CAREFLOW_USERNAME_INPUT),
         credentials.get(Key.CAREFLOW_PASSWORD_INPUT),
@@ -56,7 +58,7 @@ def _login_to_careflow(session, credentials):
 
 
 def _fetch_patients_by_consultant(session, consultant) -> list:
-    logging.debug("Fetching patients under %s", consultant.value)
+    logger.debug("Fetching patients under %s", consultant.value)
     start = time.time()
     pt_search_url = (
         "https://appapi.careflowapp.com/patients/SearchForPatientsByPopulation"
@@ -80,7 +82,7 @@ def _fetch_patients_by_consultant(session, consultant) -> list:
         if pt["AreaName"] in allowed_wards  # ignore patients on e.g. MAU and ITU
         and pt["Bed"]  # patient must have a bed allocation
     ]
-    logging.debug(
+    logger.debug(
         "%d patients found under %s in %.2fs",
         len(patients),
         consultant.value,
@@ -114,8 +116,8 @@ def get_careflow_patients(team: Team, credentials: dict):
     except (CareFlowAuthorisationError, NoCareFlowCredentialsError):
         raise
     except Exception as e:  # noqa
-        logging.exception(e)
+        logger.exception(e)
         raise CareFlowError("Error getting patients from CareFlow")
     else:
-        logging.debug("TOTAL: %.2fs", time.time() - start)
+        logger.debug("TOTAL: %.2fs", time.time() - start)
         return careflow_pts

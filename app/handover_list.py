@@ -13,6 +13,8 @@ from app.patient import Patient, PatientList
 from app.teams import Team
 from app.trakcare import get_reason_for_admissions
 
+logger = logging.getLogger("PLG")
+
 
 class HandoverTable:
     def __init__(self, table):
@@ -89,7 +91,7 @@ class HandoverTable:
 
 class HandoverList:
     def __init__(self, team: Team, file_path):
-        logging.debug("Instantiating HandoverList using %s", file_path)
+        logger.debug("Instantiating HandoverList using %s", file_path)
         self.doc = Document(docx=file_path)
         self.team = team
         self.patients: PatientList = self._parse_patients()
@@ -119,7 +121,7 @@ class HandoverList:
             pt = Patient.from_table_row(row)
             pt_list.append(pt)
 
-        logging.debug("%d patients found on the input patient list", len(pt_list))
+        logger.debug("%d patients found on the input patient list", len(pt_list))
         return pt_list
 
     @property
@@ -160,7 +162,7 @@ class HandoverList:
         except Exception as e:
             # Trakcare is flakey - have a low threshold for passing over exceptions
             # and just skip getting the .reason_for_admission
-            logging.exception(e)
+            logger.exception(e)
 
         updated_list.sort()
         self.patients = updated_list
