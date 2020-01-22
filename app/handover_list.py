@@ -25,6 +25,7 @@ class HandoverTable:
         return getattr(self._table, attr)
 
     def clear(self, keep_headers=True):
+        logger.debug("Removing old rows from original patient list table")
         for row in self.rows[keep_headers:]:
             tr = row._tr
             self._tbl.remove(tr)
@@ -169,11 +170,13 @@ class HandoverList:
         logger.debug("Patient list updated: %s", self.patients)
 
     def _update_handover_table(self):
+        logger.debug("Updating Microsoft Word patient list")
         table = self._handover_table
 
         # clear the existing table back to the column headers
         table.clear()
 
+        logger.debug("Adding new and updated patient rows to patient list table")
         current_ward = None
         for pt in self.patients:
             if pt.location.ward != current_ward:
@@ -185,6 +188,7 @@ class HandoverList:
             table.add_patient_row(pt)
 
         # apply formatting to the newly updated table
+        logger.debug("Applying document formatting")
         table.format()
 
         # put the patient count in the footer

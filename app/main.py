@@ -20,8 +20,9 @@ def main(
 
     handover_list = HandoverList(team=team, file_path=input_file_path)
     handover_list.update(credentials=credentials)
+    logger.debug("Saving Word document")
     handover_list.save(output_file_path)
-    logger.debug("List updating complete")
+    logger.debug("List saved at %s", output_file_path)
 
 
 if __name__ == "__main__":
