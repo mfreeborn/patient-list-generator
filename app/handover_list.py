@@ -118,8 +118,12 @@ class HandoverList:
             # skip past the ward name headers or empty rows
             if row.cells[0].text == row.cells[1].text:
                 continue
-
-            pt = Patient.from_table_row(row)
+            try:
+                pt = Patient.from_table_row(row)
+            except ValueError as e:
+                logger.exception(e)
+                raise
+            
             pt_list.append(pt)
 
         logger.debug("%d patients found on the input patient list", len(pt_list))
