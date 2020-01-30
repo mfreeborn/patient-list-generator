@@ -143,7 +143,7 @@ def get_reason_for_admissions(patients, credentials):
                     patient, page_id, s
                 )
                 logger.debug(
-                    "Fetched reason for admission for %s. Reason for admission:\n",
+                    "Fetched reason for admission for %s. Reason for admission:\n%s",
                     patient,
                     patient.reason_for_admission,
                 )
