@@ -55,9 +55,7 @@ class PatientList:
 
     @patients.setter
     def patients(self, value):
-        raise AttributeError(
-            f"{self.__class__.__name__}.patients is a read-only property."
-        )
+        raise AttributeError(f"{self.__class__.__name__}.patients is a read-only property.")
 
     def __getitem__(self, key: Union[str, "Patient"]) -> "Patient":
         """Return a Patient from the list with a given Patient or NHS number."""
@@ -140,7 +138,7 @@ class Location:
 
 
 class Patient:
-    nhs_num_pattern = re.compile(r"\d{3}\s?\d{3}\s?\d{4}")
+    nhs_num_pattern = re.compile(r"((?<=\s|\))|^)(\d{3}[ \t]*\d{3}[ \t]*\d{4})(\s+|)", flags=re.M)
 
     def __init__(
         self,
@@ -157,7 +155,7 @@ class Patient:
         bloods: str = None,
     ):
 
-        self._nhs_number: str = nhs_number.replace(" ", "")
+        self._nhs_number: str = "".join(nhs_number.split())
 
         self.given_name: str = given_name
         self.surname: str = surname
@@ -184,11 +182,7 @@ class Patient:
             return
 
         today = datetime.date.today()
-        return (
-            today.year
-            - self.dob.year
-            - ((today.month, today.day) < (self.dob.month, self.dob.day))
-        )
+        return today.year - self.dob.year - ((today.month, today.day) < (self.dob.month, self.dob.day))
 
     @property
     def list_name(self) -> str:
@@ -203,11 +197,7 @@ class Patient:
         if not all([self.surname, self.given_name, self.dob, self.nhs_number]):
             return "UNKNOWN"
 
-        return (
-            f"{self.list_name}\n"
-            f"{self.dob:%d/%m/%Y} ({self.age} Yrs)\n"
-            f"{self.nhs_number}"
-        )
+        return f"{self.list_name}\n" f"{self.dob:%d/%m/%Y} ({self.age} Yrs)\n" f"{self.nhs_number}"
 
     @property
     def bed(self):
@@ -221,14 +211,10 @@ class Patient:
         pt = cls(
             given_name=careflow_pt["PatientGivenName"],
             surname=careflow_pt["PatientFamilyName"],
-            dob=datetime.datetime.strptime(
-                careflow_pt["PatientDateOfBirth"], "%d-%b-%Y"
-            ).date(),
+            dob=datetime.datetime.strptime(careflow_pt["PatientDateOfBirth"], "%d-%b-%Y").date(),
             nhs_number=careflow_pt["PatientNHSNumber"],
             location=Location(
-                ward=Ward(careflow_pt["AreaName"]),
-                bay=careflow_pt["Bay"],
-                bed=careflow_pt["Bed"],
+                ward=Ward(careflow_pt["AreaName"]), bay=careflow_pt["Bay"], bed=careflow_pt["Bed"],
             ),
         )
 

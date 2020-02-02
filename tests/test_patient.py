@@ -43,7 +43,7 @@ def test_patient_equality():
 
 
 def test_patient_consistent_nhs_num():
-    nhs_nums = ["1111111111", "111 111 1111", "1 1 11 1 11111"]
+    nhs_nums = ["1111111111", "111 111 1111", "1 1 11 1 11111", "111 111 1111\n"]
     expected = "111 111 1111"
 
     for nhs_num in nhs_nums:
@@ -68,11 +68,7 @@ def test_patient_name(patient):
     names = [
         ("Michael", "Freeborn", "FREEBORN, Michael"),
         ("mary-jane", "smith", "SMITH, Mary-Jane"),
-        (
-            "Maximillian",
-            "Throborough-Longbottom",
-            "THROBOROUGH-LONGBOTTOM, Maximillian",
-        ),
+        ("Maximillian", "Throborough-Longbottom", "THROBOROUGH-LONGBOTTOM, Maximillian",),
     ]
 
     for given_name, surname, expected_list_name in names:
@@ -163,6 +159,46 @@ def test_merge_fails_with_diff_patients(patient):
     # merge them together
     with pytest.raises(ValueError):
         patient.merge(patient2)
+
+
+def test_parse_nhs_number_from_table_cell():
+    class MockCell:
+        def __init__(self, contents):
+            self.text = contents
+
+    class MockRow:
+        def __init__(self, row):
+            self.cells = [MockCell(text) for text in row]
+
+    for pt_details in [
+        f"ALLEN, Mark\n{date.today():%d/%m/%Y} (0 Yrs)\n111 111 1111",
+        f"ALLEN, Mark\n{date.today():%d/%m/%Y}\n111 111 1111",
+        f"ALLEN, Mark\n{date.today():%d/%m/%Y} 111 111 1111",
+        f"ALLEN, Mark\n{date.today():%d/%m/%Y} 1111111111",
+        f"ALLEN, Mark\n{date.today():%d/%m/%Y} 111 111  1111  ",
+        f"ALLEN, Mark\n{date.today():%d/%m/%Y}  \t 111 111  1111  ",
+        f"ALLEN, Mark\n{date.today():%d/%m/%Y}  \t 111 111  1111  \n\t\n",
+        # f"ALLEN, Mark\n{date.today():%d/%m/%Y}111 111  1111  \n\t\n",
+        f"ALLEN, Mark\n{date.today():%d/%m/%Y}(0 Yrs)1111111111",
+        f"ALLEN, Mark{date.today():%d/%m/%Y}(0 Yrs)1111111111",
+        f"ALLEN, Mark\n111 111 1111\n{date.today():%d/%m/%Y} (0 Yrs)",
+        f"ALLEN, Mark\n111 111 1111 {date.today():%d/%m/%Y} (0 Yrs)",
+        f"ALLEN, Mark\n1111111111 {date.today():%d/%m/%Y} (0 Yrs)",
+        f"1111111111\nALLEN, Mark\n{date.today():%d/%m/%Y} (0 Yrs)",
+    ]:
+        row = [
+            "1A",  # location
+            "{pt_details}".format(pt_details=pt_details),  # patient details
+            "Aspiration pneumonia",  # reason for admission
+            "Chase CXR",  # jobs
+            "Wed",  # edd
+            "no",  # ds
+            "yes",  # tta
+            "7",  # bloods
+        ]
+
+        pt = Patient.from_table_row(MockRow(row))
+        assert pt.nhs_number == "111 111 1111"
 
 
 def test_patient_from_table_row():
