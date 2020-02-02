@@ -123,7 +123,7 @@ class HandoverList:
             except ValueError as e:
                 logger.exception(e)
                 raise
-            
+
             pt_list.append(pt)
 
         logger.debug("%d patients found on the input patient list", len(pt_list))
@@ -144,9 +144,7 @@ class HandoverList:
 
     def _update_patients(self, credentials: dict) -> None:
         updated_list = PatientList(home_ward=self.team.home_ward)
-        latest_careflow_pts = get_careflow_patients(
-            team=self.team, credentials=credentials
-        )
+        latest_careflow_pts = get_careflow_patients(team=self.team, credentials=credentials)
 
         for careflow_patient in latest_careflow_pts:
             if careflow_patient not in self.patients:
@@ -161,9 +159,7 @@ class HandoverList:
                 careflow_patient.merge(self.patients[careflow_patient.nhs_number])
                 updated_list.append(careflow_patient)
         try:
-            get_reason_for_admissions(
-                [pt for pt in updated_list if pt.is_new], credentials
-            )
+            get_reason_for_admissions([pt for pt in updated_list if pt.is_new], credentials)
         except Exception as e:
             # Trakcare is flakey - have a low threshold for passing over exceptions
             # and just skip getting the .reason_for_admission
@@ -198,9 +194,7 @@ class HandoverList:
         # put the patient count in the footer
         footer = self.sections[0].footer
         footer.footer_distance = Inches(1)
-        footer.paragraphs[
-            0
-        ].text = f"{self.patient_count} patients ({self.new_patient_count} new)\n\n\n\n"
+        footer.paragraphs[0].text = f"{self.patient_count} patients ({self.new_patient_count} new)\n"
 
     def update(self, credentials):
         """Update the HandoverList patient table.
