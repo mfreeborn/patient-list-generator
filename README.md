@@ -11,7 +11,7 @@ This example runs through a simplified demonstration of what the program is capa
 #### Patients under respiratory on TrakCare (morning of 15/04/2020)
 
 * JONES, Jane 25/05/1968 7894561233 Bed 2C (reason for admission: infection ?chest)
-* DARLINGTON, Mable 15/10/1935 1112223333 Bed 1B (reason fro admission: ?IECOPD)
+* DARLINGTON, Mable 15/10/1935 1112223333 Bed 1B (reason for admission: ?IECOPD)
 
 #### Newly generated output list
 
@@ -20,9 +20,8 @@ This example runs through a simplified demonstration of what the program is capa
 Several things have happened:
 
 * Mr Smith was discharged and has been removed from the list
-* Mrs Darlington has been added to the list
+* Mrs Darlington has been added to the list in bold, representing a new patient
 * Mrs Jones has moved beds, from 1A to 2C
-* The new patient has been highlighted in bold
 * Consistent formatting has been applied to each patient
 * Simple formatting has been applied to the table header
 * Ward-based headers have been applied to make it clearer where patients are
