@@ -66,6 +66,6 @@ Upon launching the program, the user will be presented with a window into which 
 
 Next, navigate to the `Main` tab and begin by choosing an input file (i.e yesterday's list).
 
-The team, output folder will automatically be set to the same folder in which the input file is located. If the name of the team can be inferred from the name of the input file, the team will automatically be selected, otherwise it should be selected manually from the dropdown box. Once the team has been selected, the output filename will be generated.
+If the name of the team can be inferred from the name of the input file, the team will automatically be selected, otherwise it should be selected manually from the dropdown box. The output folder will automatically be set to the same folder in which the input file is located, but can be customised. The output filename will be automatically generated as soon as the team has been selected.
 
 ![Configuring settings](https://github.com/mfreeborn/patient-list-generator/blob/master/images/list-settings.png?raw=true)
