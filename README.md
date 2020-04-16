@@ -146,16 +146,16 @@ The program takes three inputs and produces one output. It first must be provide
 
 Below is a simplified graphical representation of the inputs and outputs:
 
-<-- image -->
+![Flow](https://github.com/mfreeborn/patient-list-generator/blob/master/images/Patient%20list%20flow.png?raw=true)
 
 ## Usage Instructions
 
 Upon launching the program, the user will be presented with a window into which they should enter their TrakCare and CareFlow credentials and press the `Set Credentials` button:
 
-<-- image -->
+![Setting credentials](https://github.com/mfreeborn/patient-list-generator/blob/master/images/credentials-screen.PNG?raw=true)
 
 Next, navigate to the `Main` tab and begin by choosing an input file (i.e yesterday's list).
 
-The team, output folder will automatically be set to the same folder in which the input file is located. If the name of the team can be inferred from the name of the input file, the team will automatically be selected, otherwise it should be selected manually from the dropdown box. Once the team has been selected, the output filename will be generated:
+The team, output folder will automatically be set to the same folder in which the input file is located. If the name of the team can be inferred from the name of the input file, the team will automatically be selected, otherwise it should be selected manually from the dropdown box. Once the team has been selected, the output filename will be generated.
 
-<-- image -->
+![Configuring settings](https://github.com/mfreeborn/patient-list-generator/blob/master/images/settings.PNG?raw=true)
