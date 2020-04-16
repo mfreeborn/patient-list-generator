@@ -6,55 +6,7 @@ This example runs through a simplified demonstration of what the program is capa
 
 #### The unformatted respiratory team list from the previous day (14/04/2020)
 
-<style type="text/css">
-.tg  {border-collapse:collapse;border-spacing:0;}
-.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:black;}
-.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:black;}
-.tg .tg-c3ow{border-color:inherit;text-align:center;vertical-align:top}
-.tg .tg-0pky{border-color:inherit;text-align:left;vertical-align:top}
-</style>
-<table class="tg">
-  <tr>
-    <th class="tg-c3ow">Bed</th>
-    <th class="tg-c3ow">Patient Details</th>
-    <th class="tg-c3ow">Problems</th>
-    <th class="tg-c3ow">Inpatient Progress</th>
-    <th class="tg-c3ow">Jobs</th>
-    <th class="tg-c3ow">EDD</th>
-    <th class="tg-c3ow">TTA/DS</th>
-    <th class="tg-c3ow">Blds</th>
-  </tr>
-  <tr>
-    <td class="tg-0pky">1A</td>
-    <td class="tg-0pky">SMITH, John<br>01/02/1956<br>1234567899</td>
-    <td class="tg-0pky">Pneumothorax</td>
-    <td class="tg-0pky">Drain out, resolving</td>
-    <td class="tg-0pky">Repeat CXR, then home</td>
-    <td class="tg-0pky">14/4</td>
-    <td class="tg-0pky">Both done</td>
-    <td class="tg-0pky"><br></td>
-  </tr>
-  <tr>
-    <td class="tg-0pky">1B</td>
-    <td class="tg-0pky">Jane Jones<br>789 456 1233<br>25/05/1968 (51 Yrs)<br></td>
-    <td class="tg-0pky">R CAP</td>
-    <td class="tg-0pky">Still on IVs</td>
-    <td class="tg-0pky"><span style="font-weight:bold">Chase culture results</span></td>
-    <td class="tg-0pky">Next week</td>
-    <td class="tg-0pky"></td>
-    <td class="tg-0pky">15</td>
-  </tr>
-  <tr>
-    <td class="tg-c3ow"></td>
-    <td class="tg-c3ow"></td>
-    <td class="tg-c3ow"></td>
-    <td class="tg-c3ow"></td>
-    <td class="tg-c3ow"></td>
-    <td class="tg-c3ow"></td>
-    <td class="tg-c3ow"></td>
-    <td class="tg-c3ow"></td>
-  </tr>
-</table>
+![Unformatted input list]()
 
 #### Patients under respiratory on TrakCare (morning of 15/04/2020)
 
@@ -63,49 +15,7 @@ This example runs through a simplified demonstration of what the program is capa
 
 #### Newly generated output list
 
-<style type="text/css">
-.tg  {border-collapse:collapse;border-spacing:0;}
-.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:black;}
-.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:black;}
-.tg .tg-18eh{font-weight:bold;border-color:#000000;text-align:center;vertical-align:middle}
-.tg .tg-tiis{text-decoration:underline;background-color:#efefef;border-color:#000000;text-align:center;vertical-align:middle}
-.tg .tg-xwyw{border-color:#000000;text-align:center;vertical-align:middle}
-</style>
-<table class="tg">
-  <tr>
-    <th class="tg-tiis">Bed</th>
-    <th class="tg-tiis">Patient Details</th>
-    <th class="tg-tiis">Problems</th>
-    <th class="tg-tiis">Inpatient Progress</th>
-    <th class="tg-tiis">Jobs</th>
-    <th class="tg-tiis">EDD</th>
-    <th class="tg-tiis">TTA/DS</th>
-    <th class="tg-tiis">Blds</th>
-  </tr>
-  <tr>
-    <td class="tg-tiis" colspan="8">Glossop Ward</td>
-  </tr>
-  <tr>
-    <td class="tg-18eh">1B</td>
-    <td class="tg-18eh">DARLINGTON, Mable<br>15/10/1935 (84 Yrs)<br>111 222 3333</td>
-    <td class="tg-18eh">?IECOPD</td>
-    <td class="tg-18eh"></td>
-    <td class="tg-18eh"></td>
-    <td class="tg-18eh"></td>
-    <td class="tg-18eh"></td>
-    <td class="tg-18eh"><br></td>
-  </tr>
-  <tr>
-    <td class="tg-xwyw">2C</td>
-    <td class="tg-xwyw">JONES, Jane<br>25/05/1968 (51 Yrs)<br>789 456 1233</td>
-    <td class="tg-xwyw">R CAP</td>
-    <td class="tg-xwyw">Still on IVs</td>
-    <td class="tg-xwyw">Chase culture results</td>
-    <td class="tg-xwyw">Next week</td>
-    <td class="tg-xwyw"></td>
-    <td class="tg-xwyw">15</td>
-  </tr>
-</table>
+![Formatted and updated output list]()
 
 Several things have happened:
 
@@ -152,10 +62,10 @@ Below is a simplified graphical representation of the inputs and outputs:
 
 Upon launching the program, the user will be presented with a window into which they should enter their TrakCare and CareFlow credentials and press the `Set Credentials` button:
 
-![Setting credentials](https://github.com/mfreeborn/patient-list-generator/blob/master/images/credentials-screen.PNG?raw=true)
+![Setting credentials](https://github.com/mfreeborn/patient-list-generator/blob/master/images/credentials-screen.png?raw=true)
 
 Next, navigate to the `Main` tab and begin by choosing an input file (i.e yesterday's list).
 
 The team, output folder will automatically be set to the same folder in which the input file is located. If the name of the team can be inferred from the name of the input file, the team will automatically be selected, otherwise it should be selected manually from the dropdown box. Once the team has been selected, the output filename will be generated.
 
-![Configuring settings](https://github.com/mfreeborn/patient-list-generator/blob/master/images/settings.PNG?raw=true)
+![Configuring settings](https://github.com/mfreeborn/patient-list-generator/blob/master/images/settings.png?raw=true)
