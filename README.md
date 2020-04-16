@@ -6,7 +6,7 @@ This example runs through a simplified demonstration of what the program is capa
 
 #### The unformatted respiratory team list from the previous day (14/04/2020)
 
-![Unformatted input list]()
+![Unformatted input list](https://github.com/mfreeborn/patient-list-generator/blob/master/images/unformatted-list-example.png?raw=true)
 
 #### Patients under respiratory on TrakCare (morning of 15/04/2020)
 
@@ -15,7 +15,7 @@ This example runs through a simplified demonstration of what the program is capa
 
 #### Newly generated output list
 
-![Formatted and updated output list]()
+![Formatted and updated output list](https://github.com/mfreeborn/patient-list-generator/blob/master/images/formatted-list-example.png?raw=true)
 
 Several things have happened:
 
@@ -56,16 +56,16 @@ The program takes three inputs and produces one output. It first must be provide
 
 Below is a simplified graphical representation of the inputs and outputs:
 
-![Flow](https://github.com/mfreeborn/patient-list-generator/blob/master/images/Patient%20list%20flow.png?raw=true)
+![Flow](https://github.com/mfreeborn/patient-list-generator/blob/master/images/patient-list-flow.png?raw=true)
 
 ## Usage Instructions
 
 Upon launching the program, the user will be presented with a window into which they should enter their TrakCare and CareFlow credentials and press the `Set Credentials` button:
 
-![Setting credentials](https://github.com/mfreeborn/patient-list-generator/blob/master/images/credentials-screen.png?raw=true)
+![Setting credentials](https://github.com/mfreeborn/patient-list-generator/blob/master/images/credentials-input-screen.png?raw=true)
 
 Next, navigate to the `Main` tab and begin by choosing an input file (i.e yesterday's list).
 
 The team, output folder will automatically be set to the same folder in which the input file is located. If the name of the team can be inferred from the name of the input file, the team will automatically be selected, otherwise it should be selected manually from the dropdown box. Once the team has been selected, the output filename will be generated.
 
-![Configuring settings](https://github.com/mfreeborn/patient-list-generator/blob/master/images/settings.png?raw=true)
+![Configuring settings](https://github.com/mfreeborn/patient-list-generator/blob/master/images/list-settings.png?raw=true)
