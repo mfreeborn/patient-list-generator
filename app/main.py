@@ -9,9 +9,7 @@ from app.teams import TEAMS, Team
 logger = logging.getLogger("PLG")
 
 
-def main(
-    team: Team, credentials: dict, input_file_path: Path, output_file_path: Path = None
-):
+def main(team: Team, credentials: dict, input_file_path: Path, output_file_path: Path = None):
     if output_file_path is None:
         file_ext = Path(input_file_path).suffix
         output_file_path = (
@@ -28,7 +26,5 @@ def main(
 if __name__ == "__main__":
     team = TEAMS[TeamName.ARBAB]
     main(
-        team=team,
-        input_file_path=Path("Lists/31.12.2019.docm").resolve(),
-        output_file_path=None,
+        team=team, input_file_path=Path("Lists/31.12.2019.docm").resolve(), output_file_path=None,
     )

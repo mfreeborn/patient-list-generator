@@ -182,7 +182,9 @@ class Patient:
             return
 
         today = datetime.date.today()
-        return today.year - self.dob.year - ((today.month, today.day) < (self.dob.month, self.dob.day))
+        return (
+            today.year - self.dob.year - ((today.month, today.day) < (self.dob.month, self.dob.day))
+        )
 
     @property
     def list_name(self) -> str:

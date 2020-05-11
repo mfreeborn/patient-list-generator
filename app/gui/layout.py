@@ -6,35 +6,21 @@ from app.teams import TEAMS
 main_tab_layout = [
     [sg.Text("Choose input file:*")],
     [
-        sg.InputText(
-            size=(55, 1), disabled=True, key=Key.INPUT_FILE_PATH, enable_events=True
-        ),
-        sg.FileBrowse(
-            file_types=(("Word Documents", "*.docm"), ("Word Documents", "*.docx"))
-        ),
+        sg.InputText(size=(55, 1), disabled=True, key=Key.INPUT_FILE_PATH, enable_events=True),
+        sg.FileBrowse(file_types=(("Word Documents", "*.docm"), ("Word Documents", "*.docx"))),
     ],
     [sg.Text("Select a team:*")],
-    [
-        sg.Combo(
-            sorted(team for team in TEAMS.values()),
-            enable_events=True,
-            key=Key.SELECTED_TEAM,
-        )
-    ],
+    [sg.Combo(sorted(team for team in TEAMS.values()), enable_events=True, key=Key.SELECTED_TEAM,)],
     [sg.Text("Output folder:")],
     [
-        sg.InputText(
-            size=(55, 1), disabled=True, key=Key.OUTPUT_FOLDER_PATH, enable_events=True
-        ),
+        sg.InputText(size=(55, 1), disabled=True, key=Key.OUTPUT_FOLDER_PATH, enable_events=True),
         sg.FolderBrowse(),
     ],
     [sg.Text("Output filename:")],
     [sg.InputText(disabled=True, key=Key.OUTPUT_FILENAME)],
     [
         sg.Button("Generate List", key=Key.GENERATE_LIST_BUTTON, disabled=True,),
-        sg.Button(
-            "Open Output Folder", key=Key.OPEN_OUTPUT_FOLDER_BUTTON, disabled=True
-        ),
+        sg.Button("Open Output Folder", key=Key.OPEN_OUTPUT_FOLDER_BUTTON, disabled=True),
     ],
     [
         sg.Text(

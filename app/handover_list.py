@@ -194,7 +194,9 @@ class HandoverList:
         # put the patient count in the footer
         footer = self.sections[0].footer
         footer.footer_distance = Inches(1)
-        footer.paragraphs[0].text = f"{self.patient_count} patients ({self.new_patient_count} new)\n"
+        footer.paragraphs[
+            0
+        ].text = f"{self.patient_count} patients ({self.new_patient_count} new)\n"
 
     def update(self, credentials):
         """Update the HandoverList patient table.

@@ -20,9 +20,7 @@ logger = logging.getLogger("PLG")
 def generate_list(queue, values):
     team = values[Key.SELECTED_TEAM]
     input_file_path = Path(values[Key.INPUT_FILE_PATH])
-    output_file_path = (
-        Path(values[Key.OUTPUT_FOLDER_PATH]) / values[Key.OUTPUT_FILENAME]
-    )
+    output_file_path = Path(values[Key.OUTPUT_FOLDER_PATH]) / values[Key.OUTPUT_FILENAME]
 
     credentials = {cred: values[cred] for cred in credential_keys}
     queue.put(Message.START_GENERATING_LIST)
@@ -74,12 +72,8 @@ def log_gui_event(event: str, values: dict):
     Specifically conceals sensitive information before printing."""
     # make a copy of the values dict so we don't overwrite anything permanently
     values = dict(values)
-    values[Key.CAREFLOW_PASSWORD_INPUT] = (
-        "*" * 5 if values[Key.CAREFLOW_PASSWORD_INPUT] else ""
-    )
-    values[Key.TRAKCARE_PASSWORD_INPUT] = (
-        "*" * 5 if values[Key.TRAKCARE_PASSWORD_INPUT] else ""
-    )
+    values[Key.CAREFLOW_PASSWORD_INPUT] = "*" * 5 if values[Key.CAREFLOW_PASSWORD_INPUT] else ""
+    values[Key.TRAKCARE_PASSWORD_INPUT] = "*" * 5 if values[Key.TRAKCARE_PASSWORD_INPUT] else ""
     values = {key.value: value for key, value in values.items() if isinstance(key, Key)}
 
     logger.debug(

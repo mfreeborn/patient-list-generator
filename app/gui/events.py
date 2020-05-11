@@ -29,8 +29,7 @@ def handle_input_file_path(values, window, gui_queue, executor):
         else:
             window[Key.SELECTED_TEAM].update(team)
             window[Key.OUTPUT_FILENAME].update(
-                f"{datetime.datetime.today():%d-%m-%Y}_"
-                f"{team.name.value.lower()}{file_ext}"
+                f"{datetime.datetime.today():%d-%m-%Y}_" f"{team.name.value.lower()}{file_ext}"
             )
             window[Key.GENERATE_LIST_BUTTON].update(disabled=False)
 
