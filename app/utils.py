@@ -1,5 +1,9 @@
 import logging
 
+import pyodbc
+
+from app import settings
+
 formatter = logging.Formatter(
     fmt="%(asctime)s:%(levelname)s:%(name)s:%(filename)s:%(lineno)s: %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
@@ -22,3 +26,8 @@ def init_logging(level=None):
     logger.addHandler(stdout_streamhandler)
 
     logger.debug("Logging initialisation complete")
+
+
+def connect_to_db() -> pyodbc.Connection:
+    """Return a pyodbc connection object to the TrakCare inpatients view."""
+    return pyodbc.connect(settings.DB_URL)

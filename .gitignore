@@ -12,3 +12,4 @@ Logs/
 *.doc
 *.docm
 *.docx
+.env
