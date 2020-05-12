@@ -1,7 +1,7 @@
 import logging
 from typing import List
 
-from app import enum, models, teams, utils
+from app import enums, models, teams, utils
 
 logger = logging.getLogger("PLG")
 
@@ -31,7 +31,7 @@ def get_trakcare_patients(team: teams.Team) -> List[models.Patient]:
         """
 
     consultants = team.consultants
-    allowed_wards = [ward.value for ward in enum.Ward]
+    allowed_wards = [ward.value for ward in enums.Ward]
     return [
         models.Patient.from_trakcare(patient)
         for patient in cursor.execute(all_patients_statement, consultants, allowed_wards)

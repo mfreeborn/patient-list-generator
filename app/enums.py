@@ -7,7 +7,7 @@ class TeamName(Enum):
     CARDIOLOGY = "Cardiology"
     STROKE = "Stroke"
     ARYA = "Arya"
-    MARK = "MARK"
+    MARK = "Mark"
     ARBAB = "Arbab"
 
     def __str__(self):

@@ -5,9 +5,6 @@ from enum import Enum, unique
 class Key(Enum):
     """Enumerations for each gui component key."""
 
-    CAREFLOW_PASSWORD_INPUT = "careflow_password_input"
-    CAREFLOW_USERNAME_INPUT = "careflow_username_input"
-    CREDENTIALS_SUCCESS_TEXT = "credentials_success_text"
     GENERATE_LIST_BUTTON = "generate_list_button"
     INPUT_FILE_PATH = "input_file_path"
     LIST_ERROR_TEXT = "list_error_text"
@@ -20,10 +17,7 @@ class Key(Enum):
     OUTPUT_WINDOW = "output_window"
     SAVE_LOGS_BUTTON = "save_logs_button"
     SELECTED_TEAM = "selected_team"
-    SET_CREDENTIALS_BUTTON = "set_credentials_button"
     TAB_GROUP = "tab_group"
-    TRAKCARE_PASSWORD_INPUT = "trakcare_password_input"
-    TRAKCARE_USERNAME_INPUT = "trakcare_username_input"
 
 
 @unique

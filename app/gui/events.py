@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 
 from app.enums import TeamName
-from app.gui import LOGS_DIR, credential_keys
+from app.gui import LOGS_DIR
 from app.gui.enums import Key
 from app.gui.utils import generate_list, open_folder
 from app.teams import TEAMS
@@ -73,15 +73,7 @@ def handle_save_logs_button(values, window, gui_queue, executor):
     window[Key.LOGS_SUCCESS_TEXT].update(f"Logs saved to:\n{file_path}", visible=True)
 
 
-def handle_set_credentials_button(values, window, gui_queue, executor):
-    for cred in credential_keys:
-        window[cred].update(values[cred].strip())
-
-    logger.debug("Credentials have been set")
-    window[Key.CREDENTIALS_SUCCESS_TEXT].update(visible=True)
-
-
-def handle_selected_team(values, window, gui_queue, executor):
+def no_op(values, window, gui_queue, executor):
     pass
 
 
@@ -92,6 +84,5 @@ EVENTS = {
     Key.OPEN_LOGS_FOLDER_BUTTON: handle_open_logs_folder_button,
     Key.GENERATE_LIST_BUTTON: handle_generate_list_button,
     Key.SAVE_LOGS_BUTTON: handle_save_logs_button,
-    Key.SET_CREDENTIALS_BUTTON: handle_set_credentials_button,
-    Key.SELECTED_TEAM: handle_selected_team,
+    Key.SELECTED_TEAM: no_op,
 }
