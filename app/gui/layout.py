@@ -57,53 +57,10 @@ log_tab_layout = [
     ],
 ]
 
-credentials_tab_layout = [
-    [
-        sg.Column(
-            [
-                [sg.Text("CareFlow username:")],
-                [sg.Text("CareFlow password:")],
-                [sg.Text("TrakCare username:")],
-                [sg.Text("TrakCare password:")],
-            ]
-        ),
-        sg.Column(
-            [
-                [sg.InputText(key=Key.CAREFLOW_USERNAME_INPUT)],
-                [sg.InputText(key=Key.CAREFLOW_PASSWORD_INPUT, password_char="*")],
-                [sg.InputText(key=Key.TRAKCARE_USERNAME_INPUT)],
-                [sg.InputText(key=Key.TRAKCARE_PASSWORD_INPUT, password_char="*")],
-            ]
-        ),
-    ],
-    [sg.Button("Set Credentials", key=Key.SET_CREDENTIALS_BUTTON)],
-    [
-        sg.Text(
-            " Credentials set successfully",
-            key=Key.CREDENTIALS_SUCCESS_TEXT,
-            font=("Helvetica", 11),
-            visible=False,
-        ),
-    ],
-    [
-        sg.Text(
-            "Note: credentials are never saved to disk, they are held\nin memory "
-            "just whilst the program is running."
-        )
-    ],
-]
-
 main_layout = [
     [
         sg.TabGroup(
-            [
-                [
-                    sg.Tab("Main", main_tab_layout),
-                    sg.Tab("Credentials", credentials_tab_layout),
-                    sg.Tab("Logs", log_tab_layout),
-                ]
-            ],
-            key=Key.TAB_GROUP,
+            [[sg.Tab("Main", main_tab_layout), sg.Tab("Logs", log_tab_layout)]], key=Key.TAB_GROUP,
         )
     ]
 ]
