@@ -30,7 +30,7 @@ class Team:
 TEAMS = {
     TeamName.RESPIRATORY: Team(
         name=TeamName.RESPIRATORY,
-        consultants=[Consultant.ALISON_MOODY, Consultant.GEORGE_HANDS, Consultant.JAREER_RAZA,],
+        consultants=[Consultant.ALISON_MOODY, Consultant.GEORGE_HANDS, Consultant.JAREER_RAZA],
         home_ward=Ward.GLOSSOP,
     ),
     TeamName.GASTRO: Team(
@@ -48,8 +48,8 @@ TEAMS = {
         consultants=[
             Consultant.CHRIS_GIBBS,
             Consultant.DUSHEN_THARMARATNAM,
-            Consultant.AMJAD_CHEEMA,
             Consultant.RAHUL_POTLURI,
+            Consultant.SUJOY_ROY,
         ],
         home_ward=Ward.VICTORIA,
     ),
@@ -59,8 +59,8 @@ TEAMS = {
     TeamName.ARYA: Team(
         name=TeamName.ARYA, consultants=[Consultant.VIVEK_ARYA], home_ward=Ward.ALEXANDRA,
     ),
-    TeamName.ELAMIN: Team(
-        name=TeamName.ELAMIN, consultants=[Consultant.ELSADIG_ELAMIN], home_ward=Ward.CAPENER,
+    TeamName.MARK: Team(
+        name=TeamName.MARK, consultants=[Consultant.ADETOKUNBOH_MARK], home_ward=Ward.CAPENER,
     ),
     TeamName.ARBAB: Team(
         name=TeamName.ARBAB, consultants=[Consultant.MAZHAR_ARBAB], home_ward=Ward.FORTESCUE,

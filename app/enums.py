@@ -7,7 +7,7 @@ class TeamName(Enum):
     CARDIOLOGY = "Cardiology"
     STROKE = "Stroke"
     ARYA = "Arya"
-    ELAMIN = "Elamin"
+    MARK = "MARK"
     ARBAB = "Arbab"
 
     def __str__(self):
@@ -35,8 +35,8 @@ class Consultant(Enum):
 
     CHRIS_GIBBS = "Dr Christopher Gibbs"
     DUSHEN_THARMARATNAM = "Dr Dushen Tharmaratnam"
-    AMJAD_CHEEMA = "Muhammad Cheema"
     RAHUL_POTLURI = "Dr Rahul Potluri"
+    SUJOY_ROY = "Dr Sujoy Roy"
 
     BYRON_THERON = "Dr Byron Theron"
     ANDREW_DAVIS = "Dr Andrew Davis"
@@ -49,6 +49,4 @@ class Consultant(Enum):
 
     RIAZ_LATIF = "Dr Riaz Latif"
 
-    # note the required spaces at the end of Elamin's name!
-    # that took ages to debug...
-    ELSADIG_ELAMIN = "Dr Elsadig Elamin  "
+    ADETOKUNBOH_MARK = "Dr Adetokunboh Mark"

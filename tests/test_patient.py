@@ -70,8 +70,8 @@ def test_patient_name(patient):
         ("Maximillian", "Throborough-Longbottom", "THROBOROUGH-LONGBOTTOM, Maximillian",),
     ]
 
-    for given_name, surname, expected_list_name in names:
-        patient.given_name = given_name
+    for forename, surname, expected_list_name in names:
+        patient.forename = forename
         patient.surname = surname
         assert patient.list_name == expected_list_name
 
@@ -81,7 +81,7 @@ def test_patient_details(patient):
     assert patient.patient_details == expected
 
     patient.dob = date.today()
-    patient.given_name = "Mark"
+    patient.forename = "Mark"
     patient.surname = "Allen"
 
     expected = f"ALLEN, Mark\n{date.today():%d/%m/%Y} (0 Yrs)\n111 111 1111"
@@ -98,7 +98,7 @@ def test_patient_bed(patient):
 
 def test_merge_patients(patient):
     pt_dict = {
-        "given_name": "Ronald",
+        "forename": "Ronald",
         "surname": "O'Sullivan",
         "dob": date.today(),
         "reason_for_admission": "Aspiration pneumonia",
@@ -112,7 +112,7 @@ def test_merge_patients(patient):
     location_2 = Location(Ward.CAPENER, "CAPBAY02", "BedA")
 
     # start with a patient just with the up to date details from CareFlow
-    patient.given_name = pt_dict["given_name"]
+    patient.forename = pt_dict["forename"]
     patient.surname = pt_dict["surname"]
     patient.dob = pt_dict["dob"]
     patient.location = location_1
@@ -133,7 +133,7 @@ def test_merge_patients(patient):
 
 def test_merge_fails_with_diff_patients(patient):
     pt_dict = {
-        "given_name": "Ronald",
+        "forename": "Ronald",
         "surname": "O'Sullivan",
         "dob": date.today(),
         "reason_for_admission": "Aspiration pneumonia",
@@ -147,7 +147,7 @@ def test_merge_fails_with_diff_patients(patient):
     location_2 = Location(Ward.CAPENER, "CAPBAY02", "BedA")
 
     # start with a patient just with the up to date details from CareFlow
-    patient.given_name = pt_dict["given_name"]
+    patient.forename = pt_dict["forename"]
     patient.surname = pt_dict["surname"]
     patient.dob = pt_dict["dob"]
     patient.location = location_1
