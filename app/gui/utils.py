@@ -40,7 +40,7 @@ def init_gui(window_title, layout, theme=None):
     """Helper function for initialising the gui."""
     logging.debug("Initialising GUI")
     if theme is None:
-        theme = "Dark Blue 3"
+        theme = "Reddit"
     sg.theme(theme)
 
     main_window = sg.Window(window_title, layout, finalize=True)
