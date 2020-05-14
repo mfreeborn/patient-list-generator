@@ -2,28 +2,20 @@ from datetime import date
 
 import pytest
 from app.enums import Ward
-from app.patient import Location, Patient
+from app.models import Location, Patient
 
 
-def test_location_parse_beds(careflow_bed_format):
-    for ward, cf_bay, cf_bed, list_bed in careflow_bed_format:
-        assert Location(ward, cf_bay, cf_bed).bed == list_bed
-
-
-def test_location_lun_ward_on_cap():
-    # so-called "Lundy Ward On Capener" has a ward of Lundy by default,
-    # but should have a ward of Capener
-    location = (Ward.LUNDY, "CAPBAY01", "Bed1C")
-    loc = Location(location[0], location[1], location[2])
-    assert loc.ward == Ward.CAPENER
+def test_location_parse_beds(trakcare_bed_format):
+    for ward, tk_bay, tk_bed, list_bed in trakcare_bed_format:
+        assert Location(ward, tk_bay, tk_bed).bed == list_bed
 
 
 def test_location_is_sideroom():
     locs = [
-        (Ward.FORTESCUE, "FORYELLOWRM", "Bed01", True),
-        (Ward.FORTESCUE, "FOR2GREEN", "Bed03", False),
-        (Ward.GLOSSOP, "GLOBAY01", "BedF", False),
-        (Ward.GLOSSOP, "GLOSR13", "Bed01", True),
+        (Ward.FORTESCUE, "Yellow Room (FORT)", "Bed01", True),
+        (Ward.FORTESCUE, "Green (FORT)", "Bed03", False),
+        (Ward.GLOSSOP, "Bay 01 GL", "BedF", False),
+        (Ward.GLOSSOP, "Room 13 GL", "Bed01", True),
     ]
 
     for ward, cf_bay, cf_bed, is_sr in locs:

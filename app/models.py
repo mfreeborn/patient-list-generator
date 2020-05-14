@@ -96,7 +96,7 @@ class PatientList:
 
 
 class Location:
-    fortescue_bay_pattern = re.compile(r"FOR\d(\D{4,6}){1}(BAY)?$")
+    number_pattern = re.compile(r"\d{1,2}")
 
     def __init__(self, ward: Ward, bay: str, bed: str):
         self.ward: Ward = ward
@@ -105,21 +105,43 @@ class Location:
 
     def _parse_bed(self, bay: str, bed: str) -> str:
         """Take the bay/bed as given by TrakCare and convert it to a user-friendly format."""
-        if self.ward == Ward.FORTESCUE:
-            # Fortescue uses a different bed naming convention i.e. Blue 1 or SR Lilac
-            if bay.lower().endswith("rm"):
-                bay_colour = bay[3:-2].title()
-                return f"SR {bay_colour}"
+        # sort out the side rooms first
+        bay = bay.lower()
+        if "room" in bay:
+            # it is a side room
+            if self.ward == Ward.FORTESCUE:
+                # Fortescue uses colours rather than numbers
+                room_colour = bay.split()[0]
+                return f"SR {room_colour.title()}"
+            room_number = int(self.number_pattern.search(bay)[0])
+            return f"SR{room_number}"
 
-            bay_colour = self.fortescue_bay_pattern.search(bay)[1].title()
-            bed_num = int(bed[-1])
-            return f"{bay_colour} {bed_num}"
-        else:
-            if self.is_sideroom:
-                return f"SR{int(bay[-2:])}"
-            if self.ward == Ward.LUNDY and self.bay.startswith("CAP"):
-                self.ward = Ward.CAPENER
-            return f"{int(bay[-2:])}{bed[-1]}"
+        # then sort out the irregularly named bays
+        if bay == "lundy bay on capener ward":
+            return f"LBOC {bed[-1]}"
+
+        if "discharge area" in bay:
+            return "DA"
+
+        if self.ward == Ward.FORTESCUE:
+            bay_colour = bay.split()[0]
+            bed_number = int(self.number_pattern.search(bed)[0])
+            if bay_colour == "yellow":
+                bay_colour = "yell"
+            return f"{bay_colour.title()} {bed_number}"
+
+        # then sort out Caroline Thorpe bays
+        if self.ward == Ward.CAROLINE_THORPE:
+            bay_number = int(self.number_pattern.search(bay)[0])
+            bed_number = bed[-1]
+            return f"B{bay_number} B{bed_number}"
+
+        # this should then cover the rest of the beds
+        bay_number = int(self.number_pattern.search(bay)[0])
+        bed_letter = bed[-1]
+        return f"{bay_number}{bed_letter}"
+
+        raise Exception(f"Bed not parsed properly!\nWard: {self.ward}\nBay: {bay}\nBed: {bed}")
 
     @property
     def _bed_sort(self) -> str:
@@ -138,7 +160,10 @@ class Location:
 
     @property
     def is_sideroom(self) -> bool:
-        return "SR" in self.bay or "RM" in self.bay
+        return "SR" in self.bed
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(ward={self.ward.value}, bay={self.bay})"
 
 
 class Patient:

@@ -17,6 +17,7 @@ class TeamName(Enum):
 class Ward(Enum):
     ALEXANDRA = "Alexandra"
     CAPENER = "Capener"
+    CAROLINE_THORPE = "Caroline Thorpe"
     DAY_SURGERY_UNIT = "Day Surgery Unit NDDH"
     FORTESCUE = "Fortescue"
     GLOSSOP = "Glossop"
