@@ -17,13 +17,17 @@ logger = logging.getLogger("PLG")
 
 
 def generate_list(queue, values):
+    """The link between the GUI and the business logic.
+
+    This function passes the parameters supplied by the user down to the underlying
+    'main' function to actually generate the list."""
     team = values[Key.SELECTED_TEAM]
     input_file_path = Path(values[Key.INPUT_FILE_PATH])
     output_file_path = Path(values[Key.OUTPUT_FOLDER_PATH]) / values[Key.OUTPUT_FILENAME]
 
     queue.put(Message.START_GENERATING_LIST)
     # this sleep gives just enough time for the context to switch back to the main gui thread,
-    # allowing it to update the gui in response to the sent message more responsively.
+    # allowing it to update the gui in response to the sent message more responsively
     time.sleep(0.01)
     try:
         main(
@@ -40,8 +44,8 @@ def init_gui(window_title, layout, theme=None):
     """Helper function for initialising the gui."""
     logging.debug("Initialising GUI")
     if theme is None:
-        theme = "Reddit"
-    sg.theme(theme)
+        theme = "LightGrey1"
+    # sg.change_look_and_feel(theme)
 
     main_window = sg.Window(window_title, layout, finalize=True)
 

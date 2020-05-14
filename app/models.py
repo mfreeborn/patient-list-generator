@@ -141,8 +141,6 @@ class Location:
         bed_letter = bed[-1]
         return f"{bay_number}{bed_letter}"
 
-        raise Exception(f"Bed not parsed properly!\nWard: {self.ward}\nBay: {bay}\nBed: {bed}")
-
     @property
     def _bed_sort(self) -> str:
         """Helper property for use as a sorting key to correctly sort patients in a list by bed.
@@ -154,8 +152,11 @@ class Location:
             bed_num = int(self.bed.replace("SR", ""))
             return f"SR{bed_num:02d}"
         elif self.is_sideroom:
-            # push side rooms to the bottom
-            return f"Z{self.bed}"
+            # push side rooms to the bottom, but above discharge areas
+            return f"Y{self.bed}"
+        elif self.bed == "DA":
+            # and discharge areas right to the bottom
+            return f"ZDA"
         return self.bed
 
     @property

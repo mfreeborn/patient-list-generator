@@ -2,7 +2,8 @@ creds.py
 test.py
 .idea/
 .venv/
-.vscode/
+.vscode*
+.VSCode*
 .git/
 __pycache__/
 .pytest_cache/

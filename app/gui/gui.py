@@ -11,7 +11,7 @@ from app.gui.utils import init_gui, log_gui_event, set_text_invisible, update_gu
 
 def run_gui():
     logger = logging.getLogger("PLG")
-    main_window, gui_queue = init_gui(window_title="Patient List Generator", layout=main_layout)
+    main_window, gui_queue = init_gui(window_title="Patient List Generator", layout=main_layout,)
 
     with ThreadPoolExecutor(max_workers=1) as executor:
         while True:

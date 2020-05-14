@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 from docx import Document
 from docx.table import Table
@@ -192,9 +193,11 @@ class HandoverList:
         # put the patient count in the footer
         footer = self.sections[0].footer
         footer.footer_distance = Inches(1)
-        footer.paragraphs[
-            0
-        ].text = f"{self.patient_count} patients ({self.new_patient_count} new)\n"
+        footer.paragraphs[0].text = (
+            f"{self.patient_count} patients ({self.new_patient_count} new)\t"
+            f"\t"
+            f"Generated at {datetime.now():%H:%M %d/%m/%Y}"
+        )
 
     def update(self) -> None:
         """Update the HandoverList patient table.
