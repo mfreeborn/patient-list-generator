@@ -64,7 +64,7 @@ Below is a simplified graphical representation of the inputs and outputs:
 
 Upon launching the program, the user will be presented with series of input boxes:
 
-<!-- TODO: image of an empty "main" tab -->
+![Main Window](https://github.com/mfreeborn/patient-list-generator/blob/master/images/blank_config.png?raw=true)
 
 Begin by selecting an input file - this is expected to be the previous day's list.
 
@@ -73,7 +73,5 @@ Next, if the team can be inferred from the input list filename, then it will aut
 Finally, select the desired output folder. By default, this will be the same folder where the input list is located.
 
 <!-- TODO: redo this screenshot without the now-deprecated `Credentials` tab -->
-
-![Configuring Settings](https://github.com/mfreeborn/patient-list-generator/blob/master/images/list-settings.png?raw=true)
 
 Once configured, click `Generate List` to complete the process.
