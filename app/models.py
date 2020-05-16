@@ -3,6 +3,7 @@ import re
 from collections import defaultdict
 from typing import Union
 
+import pyodbc
 from docx.table import _Row
 
 from app.enums import Ward
@@ -18,34 +19,35 @@ class PatientList:
         self[patient] = patient
 
     def extend(self, patients: list) -> None:
-        for pt in patients:
-            self.append(pt)
+        for patient in patients:
+            self.append(patient)
 
     def sort(self) -> None:
         """Sort the patient list in place.
 
-        Sorts the home ward patients to the top of the list.
-        Sorts the outlier wards alphabetically.
-        Sort the patients within each ward by bed.
+        Applies the following sorting strategy:
+            1) Sort the home ward patients to the top of the list
+            2) Sort the remaining outlier wards alphabetically
+            3) Sort the patients within each ward by bed
         """
         sorted_dict = {}
         grouped_dict = defaultdict(list)
         # create a mapping of {ward: [Patient]}
-        for pt in self:
-            grouped_dict[pt.location.ward].append(pt)
+        for patient in self:
+            grouped_dict[patient.location.ward].append(patient)
 
         # sort the patients by bed on a per-ward basis
         for ward, pts in grouped_dict.items():
-            grouped_dict[ward] = sorted(pts, key=lambda pt: pt.location._bed_sort)
+            grouped_dict[ward] = sorted(pts, key=lambda patient: patient.location._bed_sort)
 
         # populate the new list with the Home Ward patients first
-        for pt in grouped_dict.pop(self.home_ward, []):
-            sorted_dict[pt.nhs_number] = pt
+        for patient in grouped_dict.pop(self.home_ward, []):
+            sorted_dict[patient.nhs_number] = patient
 
         # then populate the new list with the outlier patients sorted by ward alphabetically
         for ward in sorted(grouped_dict.keys(), key=lambda k: k.value):
-            for pt in grouped_dict[ward]:
-                sorted_dict[pt.nhs_number] = pt
+            for patient in grouped_dict[ward]:
+                sorted_dict[patient.nhs_number] = patient
 
         self._patient_mapping = sorted_dict
 
@@ -86,13 +88,15 @@ class PatientList:
 
     def __repr__(self):
         return (
-            f"<{self.__class__.__name__}(home_ward={self.home_ward.value}, "
-            f"patient_count={len(self)}, new_patient_count={len([pt for pt in self if pt.is_new])})>"
+            f"<{self.__class__.__name__}("
+            f"home_ward={self.home_ward.value}, "
+            f"patient_count={len(self)}, "
+            f"new_patient_count={len([pt for pt in self if pt.is_new])})>"
         )
 
 
 class Location:
-    fortescue_bay_pattern = re.compile(r"FOR\d(\D{4,6}){1}(BAY)?$")
+    number_pattern = re.compile(r"\d{1,2}")
 
     def __init__(self, ward: Ward, bay: str, bed: str):
         self.ward: Ward = ward
@@ -100,22 +104,42 @@ class Location:
         self.bed: str = self._parse_bed(bay, bed)
 
     def _parse_bed(self, bay: str, bed: str) -> str:
-        """Take the bay/bed as given by the CareFlow API and convert it to a user-friendly format."""
-        if self.ward == Ward.FORTESCUE:
-            # Fortescue uses a different bed naming convention i.e. Blue 1 or SR Lilac
-            if bay.lower().endswith("rm"):
-                bay_colour = bay[3:-2].title()
-                return f"SR {bay_colour}"
+        """Take the bay/bed as given by TrakCare and convert it to a user-friendly format."""
+        # sort out the side rooms first
+        bay = bay.lower()
+        if "room" in bay:
+            # it is a side room
+            if self.ward == Ward.FORTESCUE:
+                # Fortescue uses colours rather than numbers
+                room_colour = bay.split()[0]
+                return f"SR {room_colour.title()}"
+            room_number = int(self.number_pattern.search(bay)[0])
+            return f"SR{room_number}"
 
-            bay_colour = self.fortescue_bay_pattern.search(bay)[1].title()
-            bed_num = int(bed[-1])
-            return f"{bay_colour} {bed_num}"
-        else:
-            if self.is_sideroom:
-                return f"SR{int(bay[-2:])}"
-            if self.ward == Ward.LUNDY and self.bay.startswith("CAP"):
-                self.ward = Ward.CAPENER
-            return f"{int(bay[-2:])}{bed[-1]}"
+        # then sort out the irregularly named bays
+        if bay == "lundy bay on capener ward":
+            return f"LBOC {bed[-1]}"
+
+        if "discharge area" in bay:
+            return "DA"
+
+        if self.ward == Ward.FORTESCUE:
+            bay_colour = bay.split()[0]
+            bed_number = int(self.number_pattern.search(bed)[0])
+            if bay_colour == "yellow":
+                bay_colour = "yell"
+            return f"{bay_colour.title()} {bed_number}"
+
+        # then sort out Caroline Thorpe bays
+        if self.ward == Ward.CAROLINE_THORPE:
+            bay_number = int(self.number_pattern.search(bay)[0])
+            bed_number = bed[-1]
+            return f"B{bay_number} B{bed_number}"
+
+        # this should then cover the rest of the beds
+        bay_number = int(self.number_pattern.search(bay)[0])
+        bed_letter = bed[-1]
+        return f"{bay_number}{bed_letter}"
 
     @property
     def _bed_sort(self) -> str:
@@ -128,13 +152,19 @@ class Location:
             bed_num = int(self.bed.replace("SR", ""))
             return f"SR{bed_num:02d}"
         elif self.is_sideroom:
-            # push side rooms to the bottom
-            return f"Z{self.bed}"
+            # push side rooms to the bottom, but above discharge areas
+            return f"Y{self.bed}"
+        elif self.bed == "DA":
+            # and discharge areas right to the bottom
+            return f"ZDA"
         return self.bed
 
     @property
     def is_sideroom(self) -> bool:
-        return "SR" in self.bay or "RM" in self.bay
+        return "SR" in self.bed
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(ward={self.ward.value}, bay={self.bay})"
 
 
 class Patient:
@@ -143,7 +173,7 @@ class Patient:
     def __init__(
         self,
         nhs_number: str,
-        given_name: str = None,
+        forename: str = None,
         surname: str = None,
         dob: datetime.date = None,
         location: Location = None,
@@ -154,10 +184,9 @@ class Patient:
         tta: str = None,
         bloods: str = None,
     ):
-
         self._nhs_number: str = "".join(nhs_number.split())
 
-        self.given_name: str = given_name
+        self.forename: str = forename
         self.surname: str = surname
         self.dob: datetime.date = dob
 
@@ -173,7 +202,7 @@ class Patient:
         self.is_new = False
 
     @property
-    def nhs_number(self):
+    def nhs_number(self) -> str:
         return f"{self._nhs_number[:3]} {self._nhs_number[3:6]} {self._nhs_number[6:]}"
 
     @property
@@ -182,43 +211,47 @@ class Patient:
             return
 
         today = datetime.date.today()
-        return today.year - self.dob.year - ((today.month, today.day) < (self.dob.month, self.dob.day))
+        return (
+            today.year - self.dob.year - ((today.month, today.day) < (self.dob.month, self.dob.day))
+        )
 
     @property
     def list_name(self) -> str:
-        if self.given_name is None or self.surname is None:
+        if self.forename is None or self.surname is None:
             return "UNKNOWN, Unknown"
 
-        return f"{self.surname.upper()}, {self.given_name.title()}"
+        return f"{self.surname.upper()}, {self.forename.title()}"
 
     @property
-    def patient_details(self):
+    def patient_details(self) -> str:
         """Return the patient detail's in the correct format for the patient list."""
-        if not all([self.surname, self.given_name, self.dob, self.nhs_number]):
+        if not all([self.surname, self.forename, self.dob, self.nhs_number]):
             return "UNKNOWN"
 
         return f"{self.list_name}\n" f"{self.dob:%d/%m/%Y} ({self.age} Yrs)\n" f"{self.nhs_number}"
 
     @property
-    def bed(self):
+    def bed(self) -> str:
         if self.location:
             return self.location.bed
 
     @classmethod
-    def from_careflow_api(cls, careflow_pt) -> "Patient":
-        """Return a Patient object from the json provided by the CareFlow API."""
-
-        pt = cls(
-            given_name=careflow_pt["PatientGivenName"],
-            surname=careflow_pt["PatientFamilyName"],
-            dob=datetime.datetime.strptime(careflow_pt["PatientDateOfBirth"], "%d-%b-%Y").date(),
-            nhs_number=careflow_pt["PatientNHSNumber"],
+    def from_trakcare(cls, trakcare_patient: pyodbc.Row) -> "Patient":
+        """Return a Patient object from a row returned by the TrakCare database query."""
+        # TODO: check the date format provided by the TrakCare database compared to the format
+        # string we provided below
+        # TODO: check the Location bit is at all correct
+        return cls(
+            forename=trakcare_patient.forename,
+            surname=trakcare_patient.surname,
+            dob=datetime.datetime.strptime(trakcare_patient.dob, "%d-%b-%Y").date(),
+            nhs_number=trakcare_patient.nhs_number,
             location=Location(
-                ward=Ward(careflow_pt["AreaName"]), bay=careflow_pt["Bay"], bed=careflow_pt["Bed"],
+                ward=Ward(trakcare_patient.ward),
+                bay=trakcare_patient.room,
+                bed=trakcare_patient.bed,
             ),
         )
-
-        return pt
 
     @classmethod
     def from_table_row(cls, row: _Row) -> "Patient":
@@ -246,13 +279,14 @@ class Patient:
         trying to extract a patient from the Word list.
         """
 
-        pt_details = row.cells[1].text.strip()
-        nhs_number = cls.nhs_num_pattern.search(pt_details)
+        patient_details = row.cells[1].text.strip()
+        nhs_number = cls.nhs_num_pattern.search(patient_details)
 
         if nhs_number is None:
             # no match found by the regex
             raise ValueError(
-                f"No NHS number found in the table cell with the following contents: {pt_details}"
+                f"No NHS number found in the table "
+                f"cell with the following contents: {patient_details}"
             )
         else:
             # retrieves the NHS number from the successful regex match
@@ -278,10 +312,10 @@ class Patient:
     def merge(self, other_patient: "Patient") -> None:
         """Merge 'other_patient''s details into self in place.
 
-        This method takes two instances of the /same/ patient:
-            1) Patient populated from CareFlow with up to date location but no jobs, edd etc
-            2) Patient populated from the handover list with up to date jobs, edd etc but missing
-               patient identifiers
+        This method operates on two instances of the /same/ patient:
+            1) 'self': Patient populated from CareFlow with up to date location but no jobs, edd etc
+            2) 'other_patient': Patient populated from the handover list with up to date jobs,
+                edd etc but missing/outdated patient identifiers
 
         ...and merges the two together.
 

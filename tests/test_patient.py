@@ -1,30 +1,21 @@
 from datetime import date
 
 import pytest
-
 from app.enums import Ward
-from app.patient import Location, Patient
+from app.models import Location, Patient
 
 
-def test_location_parse_beds(careflow_bed_format):
-    for ward, cf_bay, cf_bed, list_bed in careflow_bed_format:
-        assert Location(ward, cf_bay, cf_bed).bed == list_bed
-
-
-def test_location_lun_ward_on_cap():
-    # so-called "Lundy Ward On Capener" has a ward of Lundy by default,
-    # but should have a ward of Capener
-    location = (Ward.LUNDY, "CAPBAY01", "Bed1C")
-    loc = Location(location[0], location[1], location[2])
-    assert loc.ward == Ward.CAPENER
+def test_location_parse_beds(trakcare_bed_format):
+    for ward, tk_bay, tk_bed, list_bed in trakcare_bed_format:
+        assert Location(ward, tk_bay, tk_bed).bed == list_bed
 
 
 def test_location_is_sideroom():
     locs = [
-        (Ward.FORTESCUE, "FORYELLOWRM", "Bed01", True),
-        (Ward.FORTESCUE, "FOR2GREEN", "Bed03", False),
-        (Ward.GLOSSOP, "GLOBAY01", "BedF", False),
-        (Ward.GLOSSOP, "GLOSR13", "Bed01", True),
+        (Ward.FORTESCUE, "Yellow Room (FORT)", "Bed01", True),
+        (Ward.FORTESCUE, "Green (FORT)", "Bed03", False),
+        (Ward.GLOSSOP, "Bay 01 GL", "BedF", False),
+        (Ward.GLOSSOP, "Room 13 GL", "Bed01", True),
     ]
 
     for ward, cf_bay, cf_bed, is_sr in locs:
@@ -71,8 +62,8 @@ def test_patient_name(patient):
         ("Maximillian", "Throborough-Longbottom", "THROBOROUGH-LONGBOTTOM, Maximillian",),
     ]
 
-    for given_name, surname, expected_list_name in names:
-        patient.given_name = given_name
+    for forename, surname, expected_list_name in names:
+        patient.forename = forename
         patient.surname = surname
         assert patient.list_name == expected_list_name
 
@@ -82,7 +73,7 @@ def test_patient_details(patient):
     assert patient.patient_details == expected
 
     patient.dob = date.today()
-    patient.given_name = "Mark"
+    patient.forename = "Mark"
     patient.surname = "Allen"
 
     expected = f"ALLEN, Mark\n{date.today():%d/%m/%Y} (0 Yrs)\n111 111 1111"
@@ -99,7 +90,7 @@ def test_patient_bed(patient):
 
 def test_merge_patients(patient):
     pt_dict = {
-        "given_name": "Ronald",
+        "forename": "Ronald",
         "surname": "O'Sullivan",
         "dob": date.today(),
         "reason_for_admission": "Aspiration pneumonia",
@@ -113,7 +104,7 @@ def test_merge_patients(patient):
     location_2 = Location(Ward.CAPENER, "CAPBAY02", "BedA")
 
     # start with a patient just with the up to date details from CareFlow
-    patient.given_name = pt_dict["given_name"]
+    patient.forename = pt_dict["forename"]
     patient.surname = pt_dict["surname"]
     patient.dob = pt_dict["dob"]
     patient.location = location_1
@@ -134,7 +125,7 @@ def test_merge_patients(patient):
 
 def test_merge_fails_with_diff_patients(patient):
     pt_dict = {
-        "given_name": "Ronald",
+        "forename": "Ronald",
         "surname": "O'Sullivan",
         "dob": date.today(),
         "reason_for_admission": "Aspiration pneumonia",
@@ -148,7 +139,7 @@ def test_merge_fails_with_diff_patients(patient):
     location_2 = Location(Ward.CAPENER, "CAPBAY02", "BedA")
 
     # start with a patient just with the up to date details from CareFlow
-    patient.given_name = pt_dict["given_name"]
+    patient.forename = pt_dict["forename"]
     patient.surname = pt_dict["surname"]
     patient.dob = pt_dict["dob"]
     patient.location = location_1

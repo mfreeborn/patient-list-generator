@@ -1,153 +1,38 @@
 import logging
+from typing import List
 
-from requests_html import HTMLSession
-
-from app.exceptions import NoTrakCareCredentialsError, TrakCareAuthorisationError
-from app.gui.enums import Key
-from app.patient import Patient, PatientList
+from app import enums, models, teams, utils
 
 logger = logging.getLogger("PLG")
 
 
-def _login_to_trakcare(credentials: dict, session: HTMLSession):
-    logger.debug("Logging into TrakCare")
-    url = "https://live.ennd.mpls.hs.intersystems.thirdparty.nhs.uk/trakcare/csp/logon.csp"
+def get_trakcare_patients(team: teams.Team) -> List[models.Patient]:
+    """Return all patients on TrakCare under a given team."""
+    conn = utils.connect_to_db()
+    cursor = conn.cursor()
 
-    username, password = (
-        credentials.get(Key.TRAKCARE_USERNAME_INPUT),
-        credentials.get(Key.TRAKCARE_PASSWORD_INPUT),
-    )
+    all_patients_statement = """
+        SELECT
+            NHSNumber AS nhs_number
+            Surname AS surname
+            Forename AS forename
+            DateOfBirth AS dob
+            Ward AS ward
+            Room AS room
+            Bed AS bed
+            ResponsibleConsultant AS consultant
+            ReasonForAttendance AS reason_for_attendance
+        FROM
+            vwPathologyCurrentInpatients
+        WHERE
+            consultant IN ?
+            AND
+            ward IN ?
+        """
 
-    if not (username and password):
-        raise NoTrakCareCredentialsError(
-            "Credentials for logging into TrakCare are missing."
-        )
-
-    r = session.post(
-        url,
-        data={
-            "USERNAME": username,
-            "PASSWORD": password,
-            "TEVENT": "d1473iLogon",
-            "TFORM": "SSUserLogon",
-            "TDIRTY": "1",
-            "LocationListFlag": "1",
-            "Hospital": "North Devon District Hospital",
-            "LocListLocID": "882",
-            "LocListGroupID": "37",
-            "LocListProfileID": "36",
-        },
-    )
-
-    # TODO: try moving this request to the `_get_reason_for_admission` function and then retry
-    # multithreading
-    url = "https://live.ennd.mpls.hs.intersystems.thirdparty.nhs.uk/trakcare/csp/epr.frames.csp?RELOGON=1"
-
-    r = session.get(url)
-    try:
-        page_id = r.html.find("#TRAK_main", first=True).attrs["src"].split("=")[-1]
-    except:  # noqa
-        raise TrakCareAuthorisationError(
-            "Error logging into TrakCare, are your credentials definitely correct?"
-        )
-
-    return session, page_id
-
-
-def _get_reason_for_admission(patient: Patient, page_id, session) -> PatientList:
-    logger.debug("Getting reason for admission for %s", patient.list_name)
-    s = session
-    url = "https://live.ennd.mpls.hs.intersystems.thirdparty.nhs.uk/trakcare/csp/websys.csp"
-
-    r = s.post(
-        url,
-        data={
-            "TFORM": "PAPerson.Find",
-            "TEVENT": "d48ifind1",
-            "TDIRTY": "2",
-            "TWKFL": "50122",
-            "TWKFLNAME": "ENXX.General Episode",
-            "TWKFLI": "1",
-            "LoctionTypes": "E",
-            "NationalID": patient.nhs_number.replace(" ", ""),
-            "TPAGID": page_id,
-            "exact": "on",
-            "soundex": "on",
-            "regoflag": "on",
-        },
-    )
-
-    episode_rows = r.html.find("#tPAAdm_Tree_1", first=True).find("tr")
-
-    latest_inpatient_episode = None
-    for row in episode_rows:
-        row_text = row.text.lower()
-        if "inpatient" in row_text and "current" in row_text:
-            latest_inpatient_episode = row
-            break
-    else:
-        logger.debug(
-            "Failed to find current inpatient episode for %s. Is it on the second"
-            "page of Patient Enquiry?",
-            patient.list_name,
-        )
-
-        # search the next page
-        # WEVENT = (
-        #     r.html.find("#Episodez1", first=True)
-        #     .attrs["onclick"]
-        #     .split("websys_nested('")[1]
-        #     .split("','")[0]
-        # )
-        # treloadid = r.html.find("#TRELOADID", first=True).attrs["value"]
-
-        # WARG_3 = (
-        #     r.html.find("SCRIPT[id^=websysPagingJS]", first=True)
-        #     .text.split("_NextPage() {")[1]
-        #     .split("function PAAdm_Tree_1_Reload(ExtraParams)")[0]
-        #     .split("','")[-2]
-        # )
-
-        # url = "https://live.ennd.mpls.hs.intersystems.thirdparty.nhs.uk/trakcare/csp/%25CSP.Broker.cls"
-        # params = {
-        #     "WARGC": "4",
-        #     "WEVENT": WEVENT,
-        #     "WARG_1": "613:1^_1",
-        #     "WARG_2": "cmp_PAAdm_Tree_1",
-        #     "WARG_3": WARG_3,
-        #     "WARG_4": f"&TCMP.TRELOADID={treloadid}",
-        # }
-
-        # r = s.post(url, data=params)
-        # # r.html.html holds the data for the second page, but it is an incomprehensible mess
-
-    args = latest_inpatient_episode.find("[tuid]", first=True).attrs["onclick"]
-    args = args.split("('")[1].split(",")[0]
-
-    url = (
-        f"https://live.ennd.mpls.hs.intersystems.thirdparty.nhs.uk/trakcare/csp/{args}"
-    )
-
-    r = s.get(url)
-    return r.html.find("#MRADMPresentComplaint", first=True).text
-
-
-def get_reason_for_admissions(patients, credentials):
-    with HTMLSession() as s:
-        # currently this seems to need to be synchronous. It appears that a fresh
-        # page_id is required for each patient
-        for patient in patients:
-            s, page_id = _login_to_trakcare(credentials, s)
-            try:
-                patient.reason_for_admission = _get_reason_for_admission(
-                    patient, page_id, s
-                )
-                logger.debug(
-                    "Fetched reason for admission for %s. Reason for admission:\n%s",
-                    patient,
-                    patient.reason_for_admission,
-                )
-            except Exception as e:
-                # we'll just skip past any errors and leave the .reason_for_admission blank
-                logger.exception(e)
-    return patients
+    consultants = team.consultants
+    allowed_wards = [ward.value for ward in enums.Ward]
+    return [
+        models.Patient.from_trakcare(patient)
+        for patient in cursor.execute(all_patients_statement, consultants, allowed_wards)
+    ]

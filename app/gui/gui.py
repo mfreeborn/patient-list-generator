@@ -11,9 +11,7 @@ from app.gui.utils import init_gui, log_gui_event, set_text_invisible, update_gu
 
 def run_gui():
     logger = logging.getLogger("PLG")
-    main_window, gui_queue = init_gui(
-        window_title="Patient List Generator", layout=main_layout
-    )
+    main_window, gui_queue = init_gui(window_title="Patient List Generator", layout=main_layout,)
 
     with ThreadPoolExecutor(max_workers=1) as executor:
         while True:
@@ -55,13 +53,9 @@ def run_gui():
                     logger.debug("button disabled after %.3fs", time.perf_counter())
 
                 if message == Message.ERROR_GENERATING_LIST:
-                    main_window[Key.GENERATE_LIST_BUTTON].update(
-                        "Generate List", disabled=False
-                    )
+                    main_window[Key.GENERATE_LIST_BUTTON].update("Generate List", disabled=False)
                     main_window[Key.LIST_ERROR_TEXT].update(visible=True)
 
                 if message == Message.FINISH_GENERATING_LIST:
-                    main_window[Key.GENERATE_LIST_BUTTON].update(
-                        "Generate List", disabled=False
-                    )
+                    main_window[Key.GENERATE_LIST_BUTTON].update("Generate List", disabled=False)
                     main_window[Key.LIST_SUCCESS_TEXT].update(visible=True)

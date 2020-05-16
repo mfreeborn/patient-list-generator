@@ -8,7 +8,6 @@ from pathlib import Path
 
 import PySimpleGUI as sg
 
-from app.gui import credential_keys
 from app.gui.enums import Key, Message
 from app.main import main
 from app.teams import Team
@@ -18,23 +17,21 @@ logger = logging.getLogger("PLG")
 
 
 def generate_list(queue, values):
+    """The link between the GUI and the business logic.
+
+    This function passes the parameters supplied by the user down to the underlying
+    'main' function to actually generate the list."""
     team = values[Key.SELECTED_TEAM]
     input_file_path = Path(values[Key.INPUT_FILE_PATH])
-    output_file_path = (
-        Path(values[Key.OUTPUT_FOLDER_PATH]) / values[Key.OUTPUT_FILENAME]
-    )
+    output_file_path = Path(values[Key.OUTPUT_FOLDER_PATH]) / values[Key.OUTPUT_FILENAME]
 
-    credentials = {cred: values[cred] for cred in credential_keys}
     queue.put(Message.START_GENERATING_LIST)
     # this sleep gives just enough time for the context to switch back to the main gui thread,
-    # allowing it to update the gui in response to the sent message more responsively.
+    # allowing it to update the gui in response to the sent message more responsively
     time.sleep(0.01)
     try:
         main(
-            team=team,
-            credentials=credentials,
-            input_file_path=input_file_path,
-            output_file_path=output_file_path,
+            team=team, input_file_path=input_file_path, output_file_path=output_file_path,
         )
     except Exception as e:
         queue.put(Message.ERROR_GENERATING_LIST)
@@ -47,8 +44,8 @@ def init_gui(window_title, layout, theme=None):
     """Helper function for initialising the gui."""
     logging.debug("Initialising GUI")
     if theme is None:
-        theme = "Dark Blue 3"
-    sg.theme(theme)
+        theme = "LightGrey1"
+    # sg.change_look_and_feel(theme)
 
     main_window = sg.Window(window_title, layout, finalize=True)
 
@@ -57,29 +54,13 @@ def init_gui(window_title, layout, theme=None):
     tk_streamhandler.setFormatter(formatter)
     logger.addHandler(tk_streamhandler)
 
-    # switch to the Credentials tab on startup
-    main_window[Key.TAB_GROUP].Widget.select(1)
-    main_window[Key.CAREFLOW_USERNAME_INPUT].set_focus()
-
-    # bind return key to credential input boxes
-    for cred in credential_keys:
-        main_window[cred].bind("<Return>", Key.SET_CREDENTIALS_BUTTON)
-
     return main_window, queue.Queue()
 
 
 def log_gui_event(event: str, values: dict):
-    """Helper function for logging events in the gui.
-
-    Specifically conceals sensitive information before printing."""
+    """Helper function for logging events in the gui."""
     # make a copy of the values dict so we don't overwrite anything permanently
     values = dict(values)
-    values[Key.CAREFLOW_PASSWORD_INPUT] = (
-        "*" * 5 if values[Key.CAREFLOW_PASSWORD_INPUT] else ""
-    )
-    values[Key.TRAKCARE_PASSWORD_INPUT] = (
-        "*" * 5 if values[Key.TRAKCARE_PASSWORD_INPUT] else ""
-    )
     values = {key.value: value for key, value in values.items() if isinstance(key, Key)}
 
     logger.debug(
@@ -102,17 +83,11 @@ def set_text_invisible(window):
     """Set user feedback messages to non-visible."""
     window[Key.LIST_ERROR_TEXT].update(visible=False)
     window[Key.LIST_SUCCESS_TEXT].update(visible=False)
-    window[Key.CREDENTIALS_SUCCESS_TEXT].update(visible=False)
     window[Key.LOGS_SUCCESS_TEXT].update(visible=False)
 
 
 def update_gui(values, window):
     """Handle the state of the gui depending on what values are/are not present."""
-    if all(values[cred] for cred in credential_keys):
-        window[Key.SET_CREDENTIALS_BUTTON].update("Update Credentials")
-    else:
-        window[Key.SET_CREDENTIALS_BUTTON].update("Set Credentials")
-
     if values[Key.SELECTED_TEAM] and not isinstance(values[Key.SELECTED_TEAM], Team):
         window[Key.SELECTED_TEAM].update(None)
 

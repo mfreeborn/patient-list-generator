@@ -2,7 +2,8 @@ creds.py
 test.py
 .idea/
 .venv/
-.vscode/
+.vscode*
+.VSCode*
 .git/
 __pycache__/
 .pytest_cache/
@@ -12,3 +13,7 @@ Logs/
 *.doc
 *.docm
 *.docx
+.env
+dist/
+build/
+run.spec
