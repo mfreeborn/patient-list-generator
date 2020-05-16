@@ -60,7 +60,8 @@ log_tab_layout = [
 main_layout = [
     [
         sg.TabGroup(
-            [[sg.Tab("Main", main_tab_layout), sg.Tab("Logs", log_tab_layout)]], key=Key.TAB_GROUP,
+            [[sg.Tab("Configure", main_tab_layout), sg.Tab("Logs", log_tab_layout)]],
+            key=Key.TAB_GROUP,
         )
     ]
 ]
