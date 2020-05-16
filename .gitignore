@@ -14,3 +14,6 @@ Logs/
 *.docm
 *.docx
 .env
+dist/
+build/
+run.spec

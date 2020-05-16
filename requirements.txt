@@ -1,3 +1,4 @@
+altgraph==0.17
 appdirs==1.4.4
 attrs==19.3.0
 black==19.10b0
@@ -14,6 +15,7 @@ pluggy==0.13.1
 py==1.8.1
 pycodestyle==2.6.0
 pyflakes==2.2.0
+PyInstaller==3.6
 pyodbc==4.0.30
 pyparsing==2.4.7
 PySimpleGUI==4.19.0
