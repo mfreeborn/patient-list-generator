@@ -2,7 +2,7 @@
 
 ## Example
 
-This example runs through a simplified demonstration of what the program is capable of doing. In this scenario, it is the morning of 15/04/2020 and it is time for the list of be produced for the respiratory team.
+This example runs through a simplified demonstration of what the program is capable of doing at the click of a button. In this scenario, it is the morning of 15/04/2020 and it is time for the list of be produced for the respiratory team.
 
 ### The unformatted respiratory team list from the previous day (14/04/2020)
 
@@ -13,7 +13,7 @@ This example runs through a simplified demonstration of what the program is capa
 - JONES, Jane 25/05/1968 7894561233 Bed 2C (reason for admission: infection ?chest)
 - DARLINGTON, Mable 15/10/1935 1112223333 Bed 1B (reason for admission: ?IECOPD)
 
-### Newly generated output list
+### Running the program to produce the output list
 
 ![Formatted and updated output list](https://github.com/mfreeborn/patient-list-generator/blob/master/images/formatted-list-example.png?raw=true)
 
@@ -68,7 +68,7 @@ Upon launching the program, the user will be presented with series of input boxe
 
 Begin by selecting an input file - this is expected to be the previous day's list.
 
-Next, if the team can be inferred from the input list filename, the it will automatically be selected, otherwise select the correct team from the dropdown box.
+Next, if the team can be inferred from the input list filename, then it will automatically be selected, otherwise select the correct team from the dropdown box.
 
 Finally, select the desired output folder. By default, this will be the same folder where the input list is located.
 
