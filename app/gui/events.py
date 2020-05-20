@@ -73,6 +73,41 @@ def handle_save_logs_button(values, window, gui_queue, executor):
     window[Key.LOGS_SUCCESS_TEXT].update(f"Logs saved to:\n{file_path}", visible=True)
 
 
+def handle_selected_team(values, window, gui_queue, executor):
+    today = datetime.date.today()
+    yesterday = today - datetime.timedelta(days=1)
+    team_name = values[Key.SELECTED_TEAM].name.value
+
+    base_directory = Path("G:") / "Medicine" / "Handover Lists" / team_name
+
+    yesterdays_directory = base_directory / f"{yesterday:%Y}" / f"{yesterday:%d %B}"
+    todays_directory = base_directory / f"{today:%Y}" / f"{today:%d %B}"
+
+    default_filename = f"{today:%d-%m-%Y}_{team_name.lower()}.docx"
+    todays_filepath = todays_directory / default_filename
+
+    if yesterdays_directory.is_dir():
+        previous_lists = sorted(
+            file
+            for file in yesterdays_directory.iterdir()
+            if file.is_file() and file.suffix.lower() in {".docx", ".docm"}
+        )
+
+        if previous_lists:
+            # if we find any good looking files, get the most recent list and use that file
+            # extension as the basis for the today's file
+            previous_list = previous_lists[-1]
+            file_extension = previous_list.suffix.lower()
+            todays_filepath = todays_filepath.with_sufix(file_extension)
+
+            if not values[Key.INPUT_FILE_PATH]:
+                window[Key.INPUT_FILE_PATH].update(previous_list)
+
+    window[Key.OUTPUT_FOLDER_PATH].update(todays_directory)
+
+    window[Key.OUTPUT_FILENAME].update(todays_filepath.name)
+
+
 def no_op(values, window, gui_queue, executor):
     pass
 
@@ -84,5 +119,5 @@ EVENTS = {
     Key.OPEN_LOGS_FOLDER_BUTTON: handle_open_logs_folder_button,
     Key.GENERATE_LIST_BUTTON: handle_generate_list_button,
     Key.SAVE_LOGS_BUTTON: handle_save_logs_button,
-    Key.SELECTED_TEAM: no_op,
+    Key.SELECTED_TEAM: handle_selected_team,
 }
