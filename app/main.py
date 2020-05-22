@@ -25,10 +25,3 @@ def main(team: Team, input_file_path: Path, output_file_path: Path = None):
     logger.debug("Saving Word document")
     handover_list.save(output_file_path)
     logger.debug("List saved at %s", output_file_path)
-
-
-if __name__ == "__main__":
-    team = TEAMS[TeamName.ARBAB]
-    main(
-        team=team, input_file_path=Path("Lists/31.12.2019.docm").resolve(), output_file_path=None,
-    )
