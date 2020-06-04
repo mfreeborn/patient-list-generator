@@ -4,14 +4,14 @@ from app.gui.enums import Key
 from app.teams import TEAMS
 
 main_tab_layout = [
-    [sg.Text("Choose input file:*")],
+    [sg.Text("1. Select a team:*")],
+    [sg.Combo(sorted(team for team in TEAMS.values()), enable_events=True, key=Key.SELECTED_TEAM,)],
+    [sg.Text("2. Choose input file:*")],
     [
         sg.InputText(size=(55, 1), disabled=True, key=Key.INPUT_FILE_PATH, enable_events=True),
         sg.FileBrowse(file_types=(("Word Documents", "*.docm"), ("Word Documents", "*.docx"))),
     ],
-    [sg.Text("Select a team:*")],
-    [sg.Combo(sorted(team for team in TEAMS.values()), enable_events=True, key=Key.SELECTED_TEAM,)],
-    [sg.Text("Output folder:")],
+    [sg.Text("3. Choose output folder:")],
     [
         sg.InputText(size=(55, 1), disabled=True, key=Key.OUTPUT_FOLDER_PATH, enable_events=True),
         sg.FolderBrowse(),
