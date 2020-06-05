@@ -1,98 +1,12 @@
 import datetime
 import re
 from collections import defaultdict
-from typing import Union
+from typing import List, Union
 
 import pyodbc
 from docx.table import _Row
 
-from app.enums import Ward
-
-
-class PatientList:
-    def __init__(self, home_ward: Ward):
-        self.home_ward: Ward = home_ward
-        # a mapping of {nhs_number: Patient}
-        self._patient_mapping: dict = {}
-
-    def append(self, patient: "Patient") -> None:
-        self[patient] = patient
-
-    def extend(self, patients: list) -> None:
-        for patient in patients:
-            self.append(patient)
-
-    def sort(self) -> None:
-        """Sort the patient list in place.
-
-        Applies the following sorting strategy:
-            1) Sort the home ward patients to the top of the list
-            2) Sort the remaining outlier wards alphabetically
-            3) Sort the patients within each ward by bed
-        """
-        sorted_dict = {}
-        grouped_dict = defaultdict(list)
-        # create a mapping of {ward: [Patient]}
-        for patient in self:
-            grouped_dict[patient.location.ward].append(patient)
-
-        # sort the patients by bed on a per-ward basis
-        for ward, pts in grouped_dict.items():
-            grouped_dict[ward] = sorted(pts, key=lambda patient: patient.location._bed_sort)
-
-        # populate the new list with the Home Ward patients first
-        for patient in grouped_dict.pop(self.home_ward, []):
-            sorted_dict[patient.nhs_number] = patient
-
-        # then populate the new list with the outlier patients sorted by ward alphabetically
-        for ward in sorted(grouped_dict.keys(), key=lambda k: k.value):
-            for patient in grouped_dict[ward]:
-                sorted_dict[patient.nhs_number] = patient
-
-        self._patient_mapping = sorted_dict
-
-    @property
-    def patients(self):
-        return list(self)
-
-    @patients.setter
-    def patients(self, value):
-        raise AttributeError(f"{self.__class__.__name__}.patients is a read-only property.")
-
-    def __getitem__(self, key: Union[str, "Patient"]) -> "Patient":
-        """Return a Patient from the list with a given Patient or NHS number."""
-        if isinstance(key, Patient):
-            key = key.nhs_number
-        try:
-            return self._patient_mapping[key]
-        except KeyError:
-            raise KeyError(f"No patient with the NHS number '{key}' found in the list")
-
-    def __setitem__(self, _: str, value: "Patient"):
-        if not isinstance(value, Patient):
-            raise TypeError
-
-        self._patient_mapping[value.nhs_number] = value
-
-    def __contains__(self, key: Union[str, "Patient"]) -> bool:
-        """Assert whether a given patient (where type(key) == Patient) is in the list."""
-        if isinstance(key, Patient):
-            key = key.nhs_number
-        return key in self._patient_mapping
-
-    def __iter__(self):
-        return iter(self._patient_mapping.values())
-
-    def __len__(self):
-        return len(self._patient_mapping)
-
-    def __repr__(self):
-        return (
-            f"<{self.__class__.__name__}("
-            f"home_ward={self.home_ward.value}, "
-            f"patient_count={len(self)}, "
-            f"new_patient_count={len([pt for pt in self if pt.is_new])})>"
-        )
+from app.enums import Consultant, TeamName, Ward
 
 
 class Location:
@@ -355,4 +269,114 @@ class Patient:
         return (
             f"<{cls_name}(name={self.list_name}, age={self.age}, nhs_number={self.nhs_number}, "
             f"location=Location(ward={self.location.ward.value}, bed={self.location.bed}))>"
+        )
+
+
+class PatientList:
+    def __init__(self, home_ward: Ward):
+        self.home_ward: Ward = home_ward
+        # a mapping of {nhs_number: Patient}
+        self._patient_mapping: dict = {}
+
+    def append(self, patient: "Patient") -> None:
+        self[patient] = patient
+
+    def extend(self, patients: list) -> None:
+        for patient in patients:
+            self.append(patient)
+
+    def sort(self) -> None:
+        """Sort the patient list in place.
+
+        Applies the following sorting strategy:
+            1) Sort the home ward patients to the top of the list
+            2) Sort the remaining outlier wards alphabetically
+            3) Sort the patients within each ward by bed
+        """
+        sorted_dict = {}
+        grouped_dict = defaultdict(list)
+        # create a mapping of {ward: [Patient]}
+        for patient in self:
+            grouped_dict[patient.location.ward].append(patient)
+
+        # sort the patients by bed on a per-ward basis
+        for ward, pts in grouped_dict.items():
+            grouped_dict[ward] = sorted(pts, key=lambda patient: patient.location._bed_sort)
+
+        # populate the new list with the Home Ward patients first
+        for patient in grouped_dict.pop(self.home_ward, []):
+            sorted_dict[patient.nhs_number] = patient
+
+        # then populate the new list with the outlier patients sorted by ward alphabetically
+        for ward in sorted(grouped_dict.keys(), key=lambda k: k.value):
+            for patient in grouped_dict[ward]:
+                sorted_dict[patient.nhs_number] = patient
+
+        self._patient_mapping = sorted_dict
+
+    @property
+    def patients(self):
+        return list(self)
+
+    @patients.setter
+    def patients(self, value):
+        raise AttributeError(f"{self.__class__.__name__}.patients is a read-only property.")
+
+    def __getitem__(self, key: Union[str, "Patient"]) -> "Patient":
+        """Return a Patient from the list with a given Patient or NHS number."""
+        if isinstance(key, Patient):
+            key = key.nhs_number
+        try:
+            return self._patient_mapping[key]
+        except KeyError:
+            raise KeyError(f"No patient with the NHS number '{key}' found in the list")
+
+    def __setitem__(self, _: str, value: "Patient"):
+        if not isinstance(value, Patient):
+            raise TypeError
+
+        self._patient_mapping[value.nhs_number] = value
+
+    def __contains__(self, key: Union[str, "Patient"]) -> bool:
+        """Assert whether a given patient (where type(key) == Patient) is in the list."""
+        if isinstance(key, Patient):
+            key = key.nhs_number
+        return key in self._patient_mapping
+
+    def __iter__(self):
+        return iter(self._patient_mapping.values())
+
+    def __len__(self):
+        return len(self._patient_mapping)
+
+    def __repr__(self):
+        return (
+            f"<{self.__class__.__name__}("
+            f"home_ward={self.home_ward.value}, "
+            f"patient_count={len(self)}, "
+            f"new_patient_count={len([pt for pt in self if pt.is_new])})>"
+        )
+
+
+class Team:
+    def __init__(self, name: TeamName, consultants: List[Consultant], home_ward: Ward):
+        self.name: TeamName = name
+        self.consultants: List[Consultant] = consultants
+        self.home_ward: Ward = home_ward
+
+    def __eq__(self, other):
+        return self.name == other.name
+
+    def __lt__(self, other):
+        return self.name.value < other.name.value
+
+    def __gt__(self, other):
+        return self.name.value > other.name.value
+
+    def __str__(self):
+        return self.name.value
+
+    def __repr__(self):
+        return (
+            f"<{self.__class__.__name__}(name={self.name.value}, home_ward={self.home_ward.value})>"
         )
