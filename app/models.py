@@ -156,7 +156,7 @@ class Location:
             return f"Y{self.bed}"
         elif self.bed == "DA":
             # and discharge areas right to the bottom
-            return f"ZDA"
+            return "ZDA"
         return self.bed
 
     @property
@@ -178,6 +178,7 @@ class Patient:
         dob: datetime.date = None,
         location: Location = None,
         reason_for_admission: str = None,
+        admission_date: datetime.date = None,
         jobs: str = None,
         edd: str = None,
         ds: str = None,
@@ -193,6 +194,7 @@ class Patient:
         self.location: Location = location
 
         self.reason_for_admission: str = reason_for_admission or ""
+        self.admission_date = admission_date
         self.jobs: str = jobs or ""
         self.edd: str = edd or ""
         self.ds: str = ds or ""
@@ -214,6 +216,11 @@ class Patient:
         return (
             today.year - self.dob.year - ((today.month, today.day) < (self.dob.month, self.dob.day))
         )
+
+    @property
+    def length_of_stay(self) -> int:
+        """Return the length of stay in integer days since admission."""
+        # TODO
 
     @property
     def list_name(self) -> str:
@@ -238,14 +245,19 @@ class Patient:
     @classmethod
     def from_trakcare(cls, trakcare_patient: pyodbc.Row) -> "Patient":
         """Return a Patient object from a row returned by the TrakCare database query."""
-        # TODO: check the date format provided by the TrakCare database compared to the format
-        # string we provided below
-        # TODO: check the Location bit is at all correct
+        dob = datetime.datetime.strptime(trakcare_patient.dob, "%Y-%m-%d").date()
+        admission_date = datetime.datetime.strptime(
+            trakcare_patient.admission_date, "%Y-%m-%d"
+        ).date()
+        reason_for_admission = trakcare_patient.reason_for_admission or ""
+        reason_for_admission = " ".join(trakcare_patient.reason_for_admission.split())
         return cls(
             forename=trakcare_patient.forename,
             surname=trakcare_patient.surname,
-            dob=datetime.datetime.strptime(trakcare_patient.dob, "%d-%b-%Y").date(),
             nhs_number=trakcare_patient.nhs_number,
+            dob=dob,
+            admission_date=admission_date,
+            reason_for_admission=reason_for_admission,
             location=Location(
                 ward=Ward(trakcare_patient.ward),
                 bay=trakcare_patient.room,

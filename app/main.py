@@ -2,9 +2,8 @@ import datetime
 import logging
 from pathlib import Path
 
-from app.enums import TeamName
 from app.handover_list import HandoverList
-from app.teams import TEAMS, Team
+from app.teams import Team
 
 logger = logging.getLogger("PLG")
 
@@ -25,3 +24,4 @@ def main(team: Team, input_file_path: Path, output_file_path: Path = None):
     logger.debug("Saving Word document")
     handover_list.save(output_file_path)
     logger.debug("List saved at %s", output_file_path)
+    # breakpoint()

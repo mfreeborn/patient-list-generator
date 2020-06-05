@@ -2,12 +2,12 @@ import logging
 from datetime import datetime
 
 from docx import Document
-from docx.table import Table
-from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
+from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
-from docx.oxml import parse_xml
-from docx.oxml.ns import nsdecls
-from docx.shared import Inches, Pt
+from docx.oxml import OxmlElement, parse_xml
+from docx.oxml.ns import nsdecls, qn
+from docx.shared import Cm, Pt
+from docx.table import Table
 
 from app import enums, models, teams, trakcare
 
@@ -50,13 +50,27 @@ class HandoverTable:
             self._new_patient_indices.add(new_patient_row._index)
 
     def format(self) -> None:
+        # center table within the page
+        self.alignment = WD_TABLE_ALIGNMENT.RIGHT
+
+        # set column width for the patient details
+        # 3cm is a good default width to fit dob and age on one line
+        for cell in self.columns[1].cells:
+            cell.width = Cm(3)
+
+        # format the rows and cells
         for row in self.rows:
-            # format the column headers
+            # format the column headers and set header row to repeat
             if row.cells[0].text.lower() == "bed":
                 for cell in row.cells:
                     for paragraph in cell.paragraphs:
                         for run in paragraph.runs:
                             run.underline = True
+                tr = row._tr
+                trPr = tr.get_or_add_trPr()
+                tblHeader = OxmlElement("w:tblHeader")
+                tblHeader.set(qn("w:val"), "true")
+                trPr.append(tblHeader)
 
             # format the ward headers
             if row.cells[0].text == row.cells[1].text:
@@ -92,16 +106,24 @@ class HandoverList:
     """The primary object representing the Word document continaing the team's list of patients."""
 
     def __init__(self, team: teams.Team, file_path):
-        logger.debug("Instantiating HandoverList using %s as a base", file_path)
+        logger.debug("Instantiating HandoverList using %s as a base list", file_path)
         self.doc = Document(docx=file_path)
         self.team = team
-        self.patients: models.PatientList = self._parse_patients()
+        self.patients = self._parse_patients()
 
         # set the default document format
         style = self.styles["Normal"]
         font = style.font
         font.name = "Calibri"
         font.size = Pt(8)
+        sections = self.doc.sections
+
+        # set narrow margins
+        for section in sections:
+            section.top_margin = Cm(1.25)
+            section.bottom_margin = Cm(1.25)
+            section.left_margin = Cm(1.25)
+            section.right_margin = Cm(1.25)
 
     def __getattr__(self, attr):
         """Pass any unresolved attribute accesses down to the underlying docx.Document instance."""
@@ -192,7 +214,7 @@ class HandoverList:
         """Update additonal metadata, such as the footer."""
         # put the patient count in the footer
         footer = self.sections[0].footer
-        footer.footer_distance = Inches(1)
+        footer.footer_distance = Cm(1.25)
         footer.paragraphs[0].text = (
             f"{self.patient_count} patients ({self.new_patient_count} new)\t"
             f"\t"

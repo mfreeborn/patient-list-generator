@@ -78,7 +78,7 @@ def handle_selected_team(values, window, gui_queue, executor):
     yesterday = today - datetime.timedelta(days=1)
     team_name = values[Key.SELECTED_TEAM].name.value
 
-    base_directory = Path("G:") / "Medicine" / "Handover Lists" / team_name
+    base_directory = Path("H:\\") / "Medicine" / "Handover Lists" / team_name
 
     yesterdays_directory = base_directory / f"{yesterday:%Y}" / f"{yesterday:%d %B}"
     todays_directory = base_directory / f"{today:%Y}" / f"{today:%d %B}"
