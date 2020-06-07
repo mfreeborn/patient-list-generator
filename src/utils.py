@@ -2,10 +2,15 @@ import functools
 import logging
 import sys
 
+from . import settings
 from .front_end.layouts.enums import Element as El
 
-
 logger = logging.getLogger()
+
+
+def build_team_file_path(team, date):
+    """Return a path to a folder constructed from a team name and a date."""
+    return settings.LIST_ROOT_DIR / f"{team.name}" / f"{date:%Y}" / f"{date:%m - %B}"
 
 
 def log_callback(fn):

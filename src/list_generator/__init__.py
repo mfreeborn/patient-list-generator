@@ -1,7 +1,7 @@
 import datetime
 import logging
 
-from .. import settings
+from .. import utils
 from .models import HandoverList
 
 logger = logging.getLogger()
@@ -35,13 +35,11 @@ def generate_list(team, input_file, input_filename):
     # file
     today = datetime.date.today()
     file_ext = input_filename.suffix
-    output_file_path = (
-        settings.LIST_ROOT_DIR
-        / f"{team.name}"
-        / f"{today:%Y}"
-        / f"{today:%m - %B}"
-        / f"{today:%d-%m-%Y}_{team.name}".lower()
-    ).with_suffix(file_ext)
+    output_file_stem = f"{today:%d-%m-%Y}_{team.name}".lower()
+    output_file_path = (utils.build_team_file_path(team, today) / output_file_stem).with_suffix(
+        file_ext
+    )
+
     # ensure the folder exists
     output_file_path.parent.mkdir(parents=True, exist_ok=True)
     logger.debug("Using the following output file path: %s", output_file_path)

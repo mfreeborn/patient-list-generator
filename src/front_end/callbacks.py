@@ -9,7 +9,7 @@ import dash_html_components as html
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
-from .. import settings, utils
+from .. import utils
 from ..list_generator import generate_list
 from ..shared_enums import Team
 from .app import app
@@ -61,11 +61,10 @@ def locate_previous_list(selected_team):
 
     # try and find the most recent handover list automatically. Do this by searching back up to
     # a week ago for a handover list identified by a specific filename format
-    team_list_dir = settings.LIST_ROOT_DIR / f"{team.name}"
     today = datetime.date.today()
     for n_days in range(1, 7):
         previous_day = today - datetime.timedelta(days=n_days)
-        current_team_list_dir = team_list_dir / f"{previous_day.year}" / f"{previous_day:%m %B}"
+        current_team_list_dir = utils.build_team_file_path(team, previous_day)
 
         # make the folder first if it doesn't exist
         current_team_list_dir.mkdir(parents=True, exist_ok=True)
@@ -215,13 +214,8 @@ def handle_generate_list(n_clicks, selected_team, uploaded_file_data, detected_l
         app.logger.info("Will use the auto-detected file as a base for the updated handoiver list")
         filename = Path(detected_list_filename)
         list_date = datetime.datetime.strptime(detected_list_filename.split("_")[0], "%d-%m-%Y")
-        input_file_path = (
-            settings.LIST_ROOT_DIR
-            / f"{team.name}"
-            / f"{list_date:%Y}"
-            / f"{list_date:%m - %B}"
-            / filename
-        )
+        input_file_path = utils.build_team_file_path(team, list_date) / filename
+
         with open(input_file_path, "rb") as fh:
             file_io = io.BytesIO(fh.read())
 
