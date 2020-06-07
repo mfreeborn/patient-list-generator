@@ -1,7 +1,8 @@
 import pytest
 
-from app.enums import Ward
-from app.models import Patient, PatientList
+from src.list_generator.models import PatientList
+from src.shared_enums import Ward
+from src.shared_models import Patient
 
 
 @pytest.fixture
