@@ -1,8 +1,9 @@
 from datetime import date
 
 import pytest
-from app.enums import Ward
-from app.models import Location, Patient
+
+from src.shared_enums import Ward
+from src.shared_models import Location, Patient
 
 
 def test_location_parse_beds(trakcare_bed_format):

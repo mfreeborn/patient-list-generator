@@ -59,19 +59,3 @@ The program takes two inputs and produces one output. It first must be provided 
 Below is a simplified graphical representation of the inputs and outputs:
 
 ![Flow](https://github.com/mfreeborn/patient-list-generator/blob/master/images/patient-list-flow.png?raw=true)
-
-## Usage Instructions
-
-Upon launching the program, the user will be presented with series of input boxes:
-
-![Main Window](https://github.com/mfreeborn/patient-list-generator/blob/master/images/blank-config.png?raw=true)
-
-Begin by selecting an input file - this is expected to be the previous day's list.
-
-Next, if the team can be inferred from the input list filename, then it will automatically be selected, otherwise select the correct team from the dropdown box.
-
-Finally, select the desired output folder. By default, this will be the same folder where the input list is located.
-
-![Main Window](https://github.com/mfreeborn/patient-list-generator/blob/master/images/completed-config.png?raw=true)
-
-Once configured, click `Generate List` to complete the process.

@@ -1,0 +1,126 @@
+/* GLOBAL */
+
+body {
+    background-color: #fafbfe;
+}
+
+/* the following handle displaying loading spinners more gracefully */
+.dash-spinner {
+    animation-name: appear;
+    animation-duration: 10s;
+    animation-delay: 0.35s;
+    animation-iteration-count: infinite;
+    animation-fill-mode: forwards;
+    visibility: hidden;
+}
+
+@keyframes appear {
+    to { visibility: visible; }
+}
+
+
+/* HEADER BAR */
+
+.header-bar {
+    background-color: #ecf0f1;
+    margin: 0px;
+    padding-bottom: 15px;
+    padding-top: 15px;
+}
+
+.app-title {
+    text-align: center;
+    margin: 0;
+}
+
+/* NAVIGATION TABS */
+
+.navigation-bar {
+    background-color: #fff;
+    margin: 0px;
+    margin-bottom: 35px;
+}
+
+.nav-tabs {
+    border: 0;
+    border-radius: 0;
+}
+
+.nav-link {
+    border: 0!important;
+    border-radius: 0!important;
+    color: #757575!important;
+    padding: 15px 25px 15px 25px;
+    width: fit-content;
+}
+
+.nav-link:hover {
+    background-color: #f7f7f7!important;
+    border: 0!important;
+    border-color: #f7f7f7!important;
+    border-radius: 0!important;
+    color: #000000!important;
+    cursor: pointer;
+}
+
+a.active {
+    background-color: #f7f7f7!important;
+    border: 0!important;
+    border-color: #f7f7f7!important;
+    border-radius: 0!important;
+    color: #000!important;
+}
+
+/* GENERATE LIST PAGE */
+
+.delete-uploaded-file-button {
+    display: inline-block;
+    padding: 0px;
+    border: 0px;
+    background-color: rgba(0,0,0,0);
+    color: red;
+    font-weight: bold;
+    margin-left: -15px;
+}
+
+.delete-uploaded-file-button:focus {
+    box-shadow: 0 0 0 0 rgba(0,0,0,0);
+}
+
+.form-label {
+    font-size: 1.5rem;
+}
+
+.form-stage-div {
+    margin-bottom: 3rem;
+}
+
+.hidden-input {
+    display: none;
+}
+
+.inline-p {
+    display: inline-flex;
+}
+
+.italic {
+    font-style: italic;
+}
+
+.no-bottom-margin {
+    margin-bottom: 0;
+}
+
+.stage-content {
+    margin-left: 25px;
+}
+
+.select-team-input {
+    color: #000;
+    display: block;
+    width: max-content;
+}
+
+.status-text-output {
+    margin-top: 15px;
+}
