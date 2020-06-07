@@ -219,7 +219,7 @@ def handle_generate_list(n_clicks, selected_team, uploaded_file_data, detected_l
             settings.LIST_ROOT_DIR
             / f"{team.name}"
             / f"{list_date:%Y}"
-            / f"{list_date:%m %B}"
+            / f"{list_date:%m - %B}"
             / filename
         )
         with open(input_file_path, "rb") as fh:
