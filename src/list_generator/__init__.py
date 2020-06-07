@@ -39,7 +39,7 @@ def generate_list(team, input_file, input_filename):
         settings.LIST_ROOT_DIR
         / f"{team.name}"
         / f"{today:%Y}"
-        / f"{today:%m %B}"
+        / f"{today:%m - %B}"
         / f"{today:%d-%m-%Y}_{team.name}".lower()
     ).with_suffix(file_ext)
     # ensure the folder exists
