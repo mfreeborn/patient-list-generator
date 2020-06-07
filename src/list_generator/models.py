@@ -1,280 +1,258 @@
-import datetime
-import re
+import logging
 from collections import defaultdict
-from typing import List, Union
+from datetime import datetime
+from typing import Union
 
-import pyodbc
-from docx.table import _Row
+from docx import Document
+from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT
+from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from docx.oxml import OxmlElement, parse_xml
+from docx.oxml.ns import nsdecls, qn
+from docx.shared import Cm, Pt
+from docx.table import Table
 
-from app.enums import Consultant, TeamName, Ward
+from .. import shared_enums
+from ..shared_models import Patient
+from ..front_end.app import db
+
+logger = logging.getLogger()
 
 
-class Location:
-    number_pattern = re.compile(r"\d{1,2}")
+class HandoverList:
+    """The primary object representing the Word document continaing the team's list of patients."""
 
-    def __init__(self, ward: Ward, bay: str, bed: str):
-        self.ward: Ward = ward
-        self.bay: str = bay
-        self.bed: str = self._parse_bed(bay, bed)
+    def __init__(self, team, file, filename):
+        logger.debug("Instantiating HandoverList using %s as a base list", filename)
+        self.doc = Document(docx=file)
+        self.team = team
+        self.patients = self._parse_patients()
 
-    def _parse_bed(self, bay: str, bed: str) -> str:
-        """Take the bay/bed as given by TrakCare and convert it to a user-friendly format."""
-        # sort out the side rooms first
-        bay = bay.lower()
-        if "room" in bay:
-            # it is a side room
-            if self.ward == Ward.FORTESCUE:
-                # Fortescue uses colours rather than numbers
-                room_colour = bay.split()[0]
-                return f"SR {room_colour.title()}"
-            room_number = int(self.number_pattern.search(bay)[0])
-            return f"SR{room_number}"
+        # set the default document format
+        style = self.styles["Normal"]
+        font = style.font
+        font.name = "Calibri"
+        font.size = Pt(8)
+        sections = self.doc.sections
 
-        # then sort out the irregularly named bays
-        if bay == "lundy bay on capener ward":
-            return f"LBOC {bed[-1]}"
+        # set narrow margins
+        for section in sections:
+            section.top_margin = Cm(1.25)
+            section.bottom_margin = Cm(1.25)
+            section.left_margin = Cm(1.25)
+            section.right_margin = Cm(1.25)
 
-        if "discharge area" in bay:
-            return "DA"
+    def __getattr__(self, attr):
+        """Pass any unresolved attribute accesses down to the underlying docx.Document instance."""
+        return getattr(self.doc, attr)
 
-        if self.ward == Ward.FORTESCUE:
-            bay_colour = bay.split()[0]
-            bed_number = int(self.number_pattern.search(bed)[0])
-            if bay_colour == "yellow":
-                bay_colour = "yell"
-            return f"{bay_colour.title()} {bed_number}"
+    def _parse_patients(self):
+        """Parse the patients from the Word document table into a PatientList."""
+        patient_list = PatientList(home_ward=self.team.home_ward)
 
-        # then sort out Caroline Thorpe bays
-        if self.ward == Ward.CAROLINE_THORPE:
-            bay_number = int(self.number_pattern.search(bay)[0])
-            bed_number = bed[-1]
-            return f"B{bay_number} B{bed_number}"
+        for row in self._handover_table.rows:
+            # skip past the column headers
+            if row.cells[0].text.lower() == "bed":
+                continue
 
-        # this should then cover the rest of the beds
-        bay_number = int(self.number_pattern.search(bay)[0])
-        bed_letter = bed[-1]
-        return f"{bay_number}{bed_letter}"
+            # skip past the ward name headers or empty rows
+            if row.cells[0].text == row.cells[1].text:
+                continue
+            try:
+                pt = Patient.from_table_row(row)
+            except ValueError as e:
+                logger.exception(e)
+                raise
 
-    @property
-    def _bed_sort(self) -> str:
-        """Helper property for use as a sorting key to correctly sort patients in a list by bed.
+            patient_list.append(pt)
 
-        The main purpose is to correctly allow for "SR9" being a lower bed number than "SR10"
-        and to handle Fortescue's unique bed-naming convetion.
-        """
-        if self.is_sideroom and self.ward != Ward.FORTESCUE:
-            bed_num = int(self.bed.replace("SR", ""))
-            return f"SR{bed_num:02d}"
-        elif self.is_sideroom:
-            # push side rooms to the bottom, but above discharge areas
-            return f"Y{self.bed}"
-        elif self.bed == "DA":
-            # and discharge areas right to the bottom
-            return "ZDA"
-        return self.bed
+        logger.debug("%d patients found on the input patient list", len(patient_list))
+        return patient_list
 
     @property
-    def is_sideroom(self) -> bool:
-        return "SR" in self.bed
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(ward={self.ward.value}, bay={self.bay})"
-
-
-class Patient:
-    nhs_num_pattern = re.compile(r"((?<=\s|\))|^)(\d{3}[ \t]*\d{3}[ \t]*\d{4})(\s+|)", flags=re.M)
-
-    def __init__(
-        self,
-        nhs_number: str,
-        forename: str = None,
-        surname: str = None,
-        dob: datetime.date = None,
-        location: Location = None,
-        reason_for_admission: str = None,
-        admission_date: datetime.date = None,
-        jobs: str = None,
-        edd: str = None,
-        ds: str = None,
-        tta: str = None,
-        bloods: str = None,
-    ):
-        self._nhs_number: str = "".join(nhs_number.split())
-
-        self.forename: str = forename
-        self.surname: str = surname
-        self.dob: datetime.date = dob
-
-        self.location: Location = location
-
-        self.reason_for_admission: str = reason_for_admission or ""
-        self.admission_date = admission_date
-        self.jobs: str = jobs or ""
-        self.edd: str = edd or ""
-        self.ds: str = ds or ""
-        self.tta: str = tta or ""
-        self.bloods: str = bloods or ""
-
-        self.is_new = False
+    def patient_count(self) -> int:
+        return len(self.patients)
 
     @property
-    def nhs_number(self) -> str:
-        return f"{self._nhs_number[:3]} {self._nhs_number[3:6]} {self._nhs_number[6:]}"
+    def new_patient_count(self) -> int:
+        return sum(patient.is_new for patient in self.patients)
+
+    def get_trakcare_patients(self):
+        team_name = self.team.name
+        allowed_wards = [ward.value for ward in shared_enums.Ward]
+        patients = (
+            db.session.query(Patient)
+            .filter(db.and_(Patient.team == team_name.value), Patient.ward.in_(allowed_wards))
+            .all()
+        )
+        return patients
 
     @property
-    def age(self) -> str:
-        if self.dob is None:
-            return
+    def _handover_table(self):
+        """Return the underlying Word document table."""
+        return HandoverTable(self.tables[0])
 
-        today = datetime.date.today()
-        return (
-            today.year - self.dob.year - ((today.month, today.day) < (self.dob.month, self.dob.day))
+    def _update_patients(self) -> None:
+        """Bring the internal PatientList object up to date with TrakCare."""
+        updated_list = PatientList(home_ward=self.team.home_ward)
+        current_trakcare_patients = self.get_trakcare_patients()
+
+        for trakcare_patient in current_trakcare_patients:
+            if trakcare_patient not in self.patients:
+                # patient must be new to the team
+                trakcare_patient.is_new = True
+                updated_list.append(trakcare_patient)
+            else:
+                # patient must be on the original list, therefore merge the
+                # jobs, EDD etc into the trakcare patient. By merging into
+                # the trakcare patient, we also ensure that their location is fully
+                # up to date incase they were moved since the previous list.
+                trakcare_patient.is_new = False
+                trakcare_patient.merge(self.patients[trakcare_patient.nhs_number])
+                updated_list.append(trakcare_patient)
+
+        updated_list.sort()
+        self.patients = updated_list
+        logger.debug("Patient list updated: %s", self.patients)
+
+    def _update_handover_table(self) -> None:
+        """Create a fresh Word table with the current PatientList."""
+        logger.debug("Updating Microsoft Word patient list")
+        table = self._handover_table
+
+        # clear the existing table back to the column headers
+        table.clear()
+
+        logger.debug("Adding new and updated patient rows to patient list table")
+        current_ward = None
+        for patient in self.patients:
+            if patient.location.ward != current_ward:
+                # we're at the first patient on a different ward, therefore add
+                # a subheader row with the name of the new ward
+                current_ward = patient.location.ward
+                table.add_ward_header_row(current_ward)
+
+            table.add_patient_row(patient)
+
+        # apply formatting to the newly updated table
+        logger.debug("Applying document formatting")
+        table.format()
+
+    def _update_list_metadata(self) -> None:
+        """Update additonal metadata, such as the footer."""
+        # put the patient count in the footer
+        footer = self.sections[0].footer
+        footer.footer_distance = Cm(1.25)
+        footer.paragraphs[0].text = (
+            f"{self.patient_count} patients ({self.new_patient_count} new)\t"
+            f"\t"
+            f"Generated at {datetime.now():%H:%M %d/%m/%Y}"
         )
 
-    @property
-    def length_of_stay(self) -> int:
-        """Return the length of stay in integer days since admission."""
-        # TODO
+    def update(self) -> None:
+        """Update the HandoverList patient table.
 
-    @property
-    def list_name(self) -> str:
-        if self.forename is None or self.surname is None:
-            return "UNKNOWN, Unknown"
-
-        return f"{self.surname.upper()}, {self.forename.title()}"
-
-    @property
-    def patient_details(self) -> str:
-        """Return the patient detail's in the correct format for the patient list."""
-        if not all([self.surname, self.forename, self.dob, self.nhs_number]):
-            return "UNKNOWN"
-
-        return f"{self.list_name}\n" f"{self.dob:%d/%m/%Y} ({self.age} Yrs)\n" f"{self.nhs_number}"
-
-    @property
-    def bed(self) -> str:
-        if self.location:
-            return self.location.bed
-
-    @classmethod
-    def from_trakcare(cls, trakcare_patient: pyodbc.Row) -> "Patient":
-        """Return a Patient object from a row returned by the TrakCare database query."""
-        dob = datetime.datetime.strptime(trakcare_patient.dob, "%Y-%m-%d").date()
-        admission_date = datetime.datetime.strptime(
-            trakcare_patient.admission_date, "%Y-%m-%d"
-        ).date()
-        reason_for_admission = trakcare_patient.reason_for_admission or ""
-        reason_for_admission = " ".join(trakcare_patient.reason_for_admission.split())
-        return cls(
-            forename=trakcare_patient.forename,
-            surname=trakcare_patient.surname,
-            nhs_number=trakcare_patient.nhs_number,
-            dob=dob,
-            admission_date=admission_date,
-            reason_for_admission=reason_for_admission,
-            location=Location(
-                ward=Ward(trakcare_patient.ward),
-                bay=trakcare_patient.room,
-                bed=trakcare_patient.bed,
-            ),
-        )
-
-    @classmethod
-    def from_table_row(cls, row: _Row) -> "Patient":
-        """Return a Patient object from the information held in a table row.
-
-        Expects the row to be in the following format:
-
-            Bed | Patient Details | Issues | Jobs | EDD | DS | TTA | Blds
-
-
-        The "Bed" cell needs to be something like:
-
-             "1A", "SR8", "SR17", "Pink 2" or "SR Lilac"
-
-
-        The "Patient Details" cell needs to be in the following format:
-
-            SMITH, John
-            01/01/1975 (45 Yrs)
-            123 456 7890
-
-        The only identifier that we try and parse from the table is the NHS
-        number. The goal is to have as small a requirement of a "correctly"
-        formatted list as possible in order to minimise parsing errors when
-        trying to extract a patient from the Word list.
+        Comprises of 3 phases:
+            1) Update the in-memory 'self.patients' PatientList using TrakCare
+            2) Update the underlying table in the Word document with the updated 'self.patients'
+            3) Update any addtional metadata pertaining to the HandoverList e.g. footer information
         """
+        self._update_patients()
+        self._update_handover_table()
+        self._update_list_metadata()
 
-        patient_details = row.cells[1].text.strip()
-        nhs_number = cls.nhs_num_pattern.search(patient_details)
 
-        if nhs_number is None:
-            # no match found by the regex
-            raise ValueError(
-                f"No NHS number found in the table "
-                f"cell with the following contents: {patient_details}"
-            )
+class HandoverTable:
+    def __init__(self, table: Table):
+        self._table = table
+        self._new_patient_indices = set()
+
+    def __getattr__(self, attr):
+        return getattr(self._table, attr)
+
+    def clear(self, keep_headers: bool = True) -> None:
+        logger.debug("Removing old rows from original patient list table")
+        for row in self.rows[keep_headers:]:
+            tr = row._tr
+            self._tbl.remove(tr)
+
+    def add_ward_header_row(self, ward: shared_enums.Ward) -> None:
+        ward_header_row = self.add_row()
+        ward_header_row.cells[0].merge(ward_header_row.cells[-1])
+        ward_header_row.cells[0].text = ward.value
+
+    def add_patient_row(self, patient: Patient) -> None:
+        new_patient_row = self.add_row()
+        new_patient_row.patient = patient
+
+        new_patient_row.cells[0].text = patient.bed
+        new_patient_row.cells[1].text = patient.patient_details
+        new_patient_row.cells[2].text = patient.reason_for_admission or ""
+        if not patient.is_new:
+            # new patients won't have any of these attributes on them
+            new_patient_row.cells[3].text = patient.jobs
+            new_patient_row.cells[4].text = patient.edd
+            new_patient_row.cells[5].text = patient.ds
+            new_patient_row.cells[6].text = patient.tta
+            new_patient_row.cells[7].text = patient.bloods
         else:
-            # retrieves the NHS number from the successful regex match
-            nhs_number = nhs_number[0]
+            self._new_patient_indices.add(new_patient_row._index)
 
-        issues = row.cells[2].text.strip()
-        jobs = row.cells[3].text.strip()
-        edd = row.cells[4].text.strip()
-        ds = row.cells[5].text.strip()
-        tta = row.cells[6].text.strip()
-        bloods = row.cells[7].text.strip()
+    def format(self) -> None:
+        # center table within the page
+        self.alignment = WD_TABLE_ALIGNMENT.RIGHT
 
-        return cls(
-            nhs_number=nhs_number,
-            reason_for_admission=issues,
-            jobs=jobs,
-            edd=edd,
-            ds=ds,
-            tta=tta,
-            bloods=bloods,
-        )
+        # set column width for the patient details
+        # 3cm is a good default width to fit dob and age on one line
+        for cell in self.columns[1].cells:
+            cell.width = Cm(3)
 
-    def merge(self, other_patient: "Patient") -> None:
-        """Merge 'other_patient''s details into self in place.
+        # format the rows and cells
+        for row in self.rows:
+            # format the column headers and set header row to repeat
+            if row.cells[0].text.lower() == "bed":
+                for cell in row.cells:
+                    for paragraph in cell.paragraphs:
+                        for run in paragraph.runs:
+                            run.underline = True
+                tr = row._tr
+                trPr = tr.get_or_add_trPr()
+                tblHeader = OxmlElement("w:tblHeader")
+                tblHeader.set(qn("w:val"), "true")
+                trPr.append(tblHeader)
 
-        This method operates on two instances of the /same/ patient:
-            1) 'self': Patient populated from CareFlow with up to date location but no jobs, edd etc
-            2) 'other_patient': Patient populated from the handover list with up to date jobs,
-                edd etc but missing/outdated patient identifiers
+            # format the ward headers
+            if row.cells[0].text == row.cells[1].text:
+                shading_elm = parse_xml(f'<w:shd {nsdecls("w")} w:fill="EEEEEE"/>')
+                for cell in row.cells:
+                    cell._tc.get_or_add_tcPr().append(shading_elm)
+                    # keep this header row with on the same page as the next row
+                    for paragraph in cell.paragraphs:
+                        paragraph.paragraph_format.keep_with_next = True
 
-        ...and merges the two together.
+            # format new patients as bold
+            if row._index in self._new_patient_indices:
+                for cell in row.cells:
+                    for para in cell.paragraphs:
+                        for run in para.runs:
+                            run.bold = True
 
-        The result should be a fully populated Patient with an up to date location from CareFlow
-        as well as up to date information about jobs, edd etc"""
-        # the two Patients must represent the same underlying person
-        if self != other_patient:
-            raise ValueError
+            # format all cells in the table
+            for cell in row.cells:
+                cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+                for paragraph in cell.paragraphs:
+                    formatter = paragraph.paragraph_format
+                    formatter.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                    formatter.space_before = Pt(2)
+                    formatter.space_after = Pt(2)
 
-        attrs_to_merge = ["reason_for_admission", "jobs", "edd", "ds", "tta", "bloods"]
-
-        for attr in attrs_to_merge:
-            other_pt_attr = getattr(other_patient, attr)
-            setattr(self, attr, other_pt_attr)
-
-    def __eq__(self, other):
-        return isinstance(other, type(self)) and self.nhs_number == other.nhs_number
-
-    def __repr__(self):
-        cls_name = self.__class__.__name__
-        pt = f"<{cls_name}(name={self.list_name}, age={self.age}, nhs_number={self.nhs_number})>"
-
-        if self.location is None:
-            return pt
-        return (
-            f"<{cls_name}(name={self.list_name}, age={self.age}, nhs_number={self.nhs_number}, "
-            f"location=Location(ward={self.location.ward.value}, bed={self.location.bed}))>"
-        )
+            # prevent table rows from splitting across page breaks
+            no_split = parse_xml(f"<w:cantSplit {nsdecls('w')}/>")
+            row._tr.get_or_add_trPr().append(no_split)
 
 
 class PatientList:
-    def __init__(self, home_ward: Ward):
-        self.home_ward: Ward = home_ward
+    def __init__(self, home_ward: shared_enums.Ward):
+        self.home_ward: shared_enums.Ward = home_ward
         # a mapping of {nhs_number: Patient}
         self._patient_mapping: dict = {}
 
@@ -355,28 +333,4 @@ class PatientList:
             f"home_ward={self.home_ward.value}, "
             f"patient_count={len(self)}, "
             f"new_patient_count={len([pt for pt in self if pt.is_new])})>"
-        )
-
-
-class Team:
-    def __init__(self, name: TeamName, consultants: List[Consultant], home_ward: Ward):
-        self.name: TeamName = name
-        self.consultants: List[Consultant] = consultants
-        self.home_ward: Ward = home_ward
-
-    def __eq__(self, other):
-        return self.name == other.name
-
-    def __lt__(self, other):
-        return self.name.value < other.name.value
-
-    def __gt__(self, other):
-        return self.name.value > other.name.value
-
-    def __str__(self):
-        return self.name.value
-
-    def __repr__(self):
-        return (
-            f"<{self.__class__.__name__}(name={self.name.value}, home_ward={self.home_ward.value})>"
         )

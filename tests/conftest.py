@@ -1,4 +1,5 @@
 import pytest
+
 from app.enums import Ward
 from app.models import Patient, PatientList
 

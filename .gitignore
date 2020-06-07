@@ -17,3 +17,6 @@ Logs/
 dist/
 build/
 run.spec
+data/
+init_db.py
+temp/
