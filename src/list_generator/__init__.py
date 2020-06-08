@@ -28,7 +28,6 @@ def generate_list(team, input_file, input_filename):
 
     Returns:
         Path: The path to the newly updated handover list.
-
     """
     # create a default output file path. Using the file extension provided by the
     # input_filename avoids making assumptions about whether it is a DOCM or DOCX file
