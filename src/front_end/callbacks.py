@@ -37,9 +37,8 @@ def switch_tab(active_tab):
 @utils.log_callback
 def initialise_file_upload_stage(selected_team):
     """Handle enabling the upload button in the second stage, once the first stage is complete."""
-    if selected_team is None:
-        # this happens on initial page load
-        raise PreventUpdate
+    if not selected_team:
+        return True
     return False
 
 
@@ -71,7 +70,7 @@ def locate_previous_list(selected_team):
 
         previous_handover_list = None
         for file in current_team_list_dir.iterdir():
-            if file.stem == f"{previous_day:%d-%m-%Y}_{team.name}".lower():
+            if file.stem == utils.generate_file_stem(team, previous_day):
                 previous_handover_list = file
 
         if previous_handover_list is not None:

@@ -31,11 +31,10 @@ def generate_list(team, input_file, input_filename):
 
     """
     # create a default output file path. Using the file extension provided by the
-    # input_filename avoids making assumptions about whether it is a DOCM or DOCX
-    # file
+    # input_filename avoids making assumptions about whether it is a DOCM or DOCX file
     today = datetime.date.today()
     file_ext = input_filename.suffix
-    output_file_stem = f"{today:%d-%m-%Y}_{team.name}".lower()
+    output_file_stem = utils.generate_file_stem(team, today)
     output_file_path = (utils.build_team_file_path(team, today) / output_file_stem).with_suffix(
         file_ext
     )

@@ -33,18 +33,9 @@ def build_team_file_path(team, date):
     return settings.LIST_ROOT_DIR / f"{team.name}" / f"{date:%Y}" / f"{date:%m - %B}"
 
 
-def log_callback(fn):
-    @functools.wraps(fn)
-    def wrapper(*args, **kwargs):
-        logger.debug(
-            "The callback '%s' was called with these args: %s",
-            fn.__name__,
-            # truncate very long args e.g. base64-encoded files
-            ", ".join(str(arg)[:30] for arg in args),
-        )
-        return fn(*args, **kwargs)
-
-    return wrapper
+def generate_file_stem(team, date):
+    """Create a file stem (i.e. no file extension) derived from the team name and the date."""
+    return f"{date:%d-%m-%Y}_{team.name}".lower()
 
 
 def init_logging(app):
@@ -63,6 +54,20 @@ def init_logging(app):
     # raise the log level of the werkzeug level so we don't get spammed by it
     werkzeug_logger = logging.getLogger("werkzeug")
     werkzeug_logger.setLevel(logging.WARN)
+
+
+def log_callback(fn):
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        logger.debug(
+            "The callback '%s' was called with these args: %s",
+            fn.__name__,
+            # truncate very long args e.g. base64-encoded files
+            ", ".join(str(arg)[:30] for arg in args),
+        )
+        return fn(*args, **kwargs)
+
+    return wrapper
 
 
 def parse_trigger(ctx):
