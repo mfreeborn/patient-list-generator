@@ -213,7 +213,7 @@ class Patient(db.Model):
         tta = row.cells[6].text.strip()
         bloods = row.cells[7].text.strip()
 
-        return cls(
+        patient = cls(
             nhs_number=nhs_number,
             reason_for_admission=issues,
             jobs=jobs,
@@ -222,6 +222,10 @@ class Patient(db.Model):
             tta=tta,
             bloods=bloods,
         )
+
+        patient.is_new = False
+
+        return patient
 
     def merge(self, other_patient) -> None:
         """Merge 'other_patient''s details into self in place.
@@ -239,7 +243,7 @@ class Patient(db.Model):
         if self != other_patient:
             raise ValueError
 
-        attrs_to_merge = ["reason_for_admission", "jobs", "edd", "ds", "tta", "bloods"]
+        attrs_to_merge = ["reason_for_admission", "jobs", "edd", "ds", "tta", "bloods", "is_new"]
 
         for attr in attrs_to_merge:
             other_pt_attr = getattr(other_patient, attr)
@@ -250,12 +254,11 @@ class Patient(db.Model):
 
     def __repr__(self):
         cls_name = self.__class__.__name__
-        pt = f"<{cls_name}(name={self.surname}, age={self.age}, nhs_number={self.nhs_number})>"
-        return pt
+        pt = f"<{cls_name}(name={self.list_name}, nhs_number={self.nhs_number})>"
         if self.location is None:
             return pt
         return (
-            f"<{cls_name}(name={self.surname}, age={self.age}, nhs_number={self.nhs_number}, "
+            f"<{cls_name}(name={self.list_name}, nhs_number={self.nhs_number}, "
             f"location=Location(ward={self.location.ward.value}, bed={self.location.bed}))>"
         )
 

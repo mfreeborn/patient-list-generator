@@ -12,8 +12,9 @@ from docx.shared import Cm, Pt
 from docx.table import Table
 
 from .. import shared_enums
-from ..shared_models import Patient
 from ..front_end.app import db
+from ..shared_models import Patient
+from ..utils import pluralise
 
 logger = logging.getLogger()
 
@@ -22,24 +23,23 @@ class HandoverList:
     """The primary object representing the Word document continaing the team's list of patients."""
 
     def __init__(self, team, file, filename):
-        logger.debug("Instantiating HandoverList using %s as a base list", filename)
+        logger.debug("Instantiating HandoverList for %r using '%s' as a base list", team, filename)
         self.doc = Document(docx=file)
         self.team = team
         self.patients = self._parse_patients()
+        logger.debug("Patients parsed from input handover list: %s", self.patients)
+        if len(self.patients):
+            logger.debug(
+                "Parsed %d %s from the input handover list:\n\t%s",
+                len(self.patients),
+                pluralise("patient", len(self.patients)),
+                "\n\t".join(repr(patient) for patient in self.patients),
+            )
+        else:
+            logger.debug("No patients found on the input handover list")
 
-        # set the default document format
-        style = self.styles["Normal"]
-        font = style.font
-        font.name = "Calibri"
-        font.size = Pt(8)
-        sections = self.doc.sections
-
-        # set narrow margins
-        for section in sections:
-            section.top_margin = Cm(1.25)
-            section.bottom_margin = Cm(1.25)
-            section.left_margin = Cm(1.25)
-            section.right_margin = Cm(1.25)
+        logger.debug("Applying default formatting to the Word document")
+        self._apply_default_formatting()
 
     def __getattr__(self, attr):
         """Pass any unresolved attribute accesses down to the underlying docx.Document instance."""
@@ -65,11 +65,10 @@ class HandoverList:
 
             patient_list.append(pt)
 
-        logger.debug("%d patients found on the input patient list", len(patient_list))
         return patient_list
 
     @property
-    def patient_count(self) -> int:
+    def total_patient_count(self) -> int:
         return len(self.patients)
 
     @property
@@ -77,6 +76,7 @@ class HandoverList:
         return sum(patient.is_new for patient in self.patients)
 
     def get_trakcare_patients(self):
+        """Fetch and return a list of patients from TrakCare under the current team."""
         team_name = self.team.name
         allowed_wards = [ward.value for ward in shared_enums.Ward]
         patients = (
@@ -91,62 +91,81 @@ class HandoverList:
         """Return the underlying Word document table."""
         return HandoverTable(self.tables[0])
 
+    def _apply_default_formatting(self):
+        style = self.styles["Normal"]
+        font = style.font
+        font.name = "Calibri"
+        font.size = Pt(8)
+        sections = self.doc.sections
+
+        # set narrow margins
+        for section in sections:
+            section.top_margin = Cm(1.25)
+            section.bottom_margin = Cm(1.25)
+            section.left_margin = Cm(1.25)
+            section.right_margin = Cm(1.25)
+
     def _update_patients(self) -> None:
         """Bring the internal PatientList object up to date with TrakCare."""
         updated_list = PatientList(home_ward=self.team.home_ward)
+        logger.debug("Fetching patients from TrakCare")
         current_trakcare_patients = self.get_trakcare_patients()
+        if len(current_trakcare_patients):
+            logger.debug(
+                "Found %d %s on TrakCare:\n\t%s",
+                len(current_trakcare_patients),
+                pluralise("patient", len(current_trakcare_patients)),
+                "\n\t".join(repr(patient) for patient in current_trakcare_patients),
+            )
+        else:
+            logger.debug("No patients found on TrakCare")
 
+        # use the TrakCare patient list as the canonical source for which patients
+        # are presently under the team. Note that any patients who were on the original
+        # input handover list will be dropped at this point.
         for trakcare_patient in current_trakcare_patients:
             if trakcare_patient not in self.patients:
                 # patient must be new to the team
                 trakcare_patient.is_new = True
                 updated_list.append(trakcare_patient)
             else:
-                # patient must be on the original list, therefore merge the
-                # jobs, EDD etc into the trakcare patient. By merging into
-                # the trakcare patient, we also ensure that their location is fully
-                # up to date incase they were moved since the previous list.
-                trakcare_patient.is_new = False
+                # patient must be on the original list, therefore merge the jobs,
+                # EDD etc into the TrakCare patient. By merging into the TrakCare
+                # patient, we also ensure that their location is fully up to date
+                # incase they were moved since the previous list was produced.
                 trakcare_patient.merge(self.patients[trakcare_patient.nhs_number])
                 updated_list.append(trakcare_patient)
 
+        logger.debug("Sorting the updated list")
         updated_list.sort()
         self.patients = updated_list
-        logger.debug("Patient list updated: %s", self.patients)
+        if len(self.patients):
+            logger.debug(
+                "The updated list now has %d %s:\n\t%s",
+                len(self.patients),
+                pluralise("patient", len(self.patients)),
+                "\n\t".join(repr(patient) for patient in self.patients),
+            )
+        else:
+            logger.debug("No patients present on the updated list")
 
     def _update_handover_table(self) -> None:
         """Create a fresh Word table with the current PatientList."""
-        logger.debug("Updating Microsoft Word patient list")
-        table = self._handover_table
-
-        # clear the existing table back to the column headers
-        table.clear()
-
-        logger.debug("Adding new and updated patient rows to patient list table")
-        current_ward = None
-        for patient in self.patients:
-            if patient.location.ward != current_ward:
-                # we're at the first patient on a different ward, therefore add
-                # a subheader row with the name of the new ward
-                current_ward = patient.location.ward
-                table.add_ward_header_row(current_ward)
-
-            table.add_patient_row(patient)
-
-        # apply formatting to the newly updated table
-        logger.debug("Applying document formatting")
-        table.format()
+        self._handover_table.update(self.patients)
 
     def _update_list_metadata(self) -> None:
         """Update additonal metadata, such as the footer."""
         # put the patient count in the footer
         footer = self.sections[0].footer
         footer.footer_distance = Cm(1.25)
-        footer.paragraphs[0].text = (
-            f"{self.patient_count} patients ({self.new_patient_count} new)\t"
+        metadata_text = (
+            f"{self.total_patient_count} {pluralise('patient', self.total_patient_count)} "
+            f"({self.new_patient_count} new)\t"
             f"\t"
             f"Generated at {datetime.now():%H:%M %d/%m/%Y}"
         )
+        footer.paragraphs[0].text = metadata_text
+        logger.debug("Added metadata to the handover list: %r", metadata_text)
 
     def update(self) -> None:
         """Update the HandoverList patient table.
@@ -167,7 +186,32 @@ class HandoverTable:
         self._new_patient_indices = set()
 
     def __getattr__(self, attr):
+        """Pass any unfound attributes down to the underlying Table object."""
         return getattr(self._table, attr)
+
+    def update(self, patients):
+        """Create a freshly updated table with the given patient list."""
+        logger.debug("Generating a fresh table in the Word document")
+
+        # clear the existing table back to the column headers
+        self.clear()
+
+        current_ward = None
+        for patient in patients:
+            if patient.location.ward != current_ward:
+                # we're at the first patient on a different ward, therefore add
+                # a subheader row with the name of the new ward
+                current_ward = patient.location.ward
+                self.add_ward_header_row(current_ward)
+
+            self.add_patient_row(patient)
+            logger.debug("%r added to the table", patient)
+        else:
+            logger.debug("No patients added to the table")
+
+        # apply formatting to the newly updated table
+        logger.debug("Applying table formatting to the Word document")
+        self.format()
 
     def clear(self, keep_headers: bool = True) -> None:
         logger.debug("Removing old rows from original patient list table")
@@ -331,6 +375,6 @@ class PatientList:
         return (
             f"<{self.__class__.__name__}("
             f"home_ward={self.home_ward.value}, "
-            f"patient_count={len(self)}, "
+            f"total_patient_count={len(self)}, "
             f"new_patient_count={len([pt for pt in self if pt.is_new])})>"
         )

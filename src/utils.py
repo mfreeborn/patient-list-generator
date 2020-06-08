@@ -71,3 +71,10 @@ def parse_trigger(ctx):
     if not trigger:
         return None
     return El(trigger)
+
+
+def pluralise(word, count):
+    """Crudely pluralise the given word based on the given count."""
+    if count == 1:
+        return word
+    return word + "s"
