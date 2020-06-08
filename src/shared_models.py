@@ -3,6 +3,7 @@ import re
 
 from sqlalchemy.ext.hybrid import hybrid_property
 
+from . import utils
 from .front_end.app import db
 from .shared_enums import Consultant
 from .shared_enums import Team as TeamEnum
@@ -16,7 +17,7 @@ class Patient(db.Model):
     nhs_num_pattern = re.compile(r"((?<=\s|\))|^)(\d{3}[ \t]*\d{3}[ \t]*\d{4})(\s+|)", flags=re.M)
 
     reg_number = db.Column("RegNumber", db.Text(), primary_key=True)
-    nhs_number = db.Column("NHSNumber", db.Text())
+    _nhs_number = db.Column("NHSNumber", utils.NHSNumber())
     forename = db.Column("Forename", db.Text())
     surname = db.Column("Surname", db.Text())
     admission_date = db.Column("AdmissionDate", db.Date)
@@ -25,7 +26,7 @@ class Patient(db.Model):
         "Ward", db.Enum(Ward, values_callable=lambda enum: [name.value for name in enum]),
     )
     room = db.Column("Room", db.Text())
-    bed = db.Column("Bed", db.Text())
+    _bed = db.Column("Bed", db.Text())
     _reason_for_admission = db.Column("ReasonForAdmission", db.Text())
     consultant = db.Column(
         "Consultant",
@@ -46,13 +47,34 @@ class Patient(db.Model):
     ):
         # __init__ is /not/ called when SQLAlchemy loads an row from the database. This
         # method is just for when we create Patient objects in from_table_row
-        self.nhs_number = nhs_number or ""
+        nhs_number = nhs_number or ""
+        self.nhs_number = "".join(nhs_number.split())
         self.reason_for_admission = reason_for_admission or ""
         self.jobs = jobs or ""
         self.edd = edd or ""
         self.ds = ds or ""
         self.tta = tta or ""
         self.bloods = bloods or ""
+
+    @property
+    def bed(self):
+        if self.location:
+            return self.location.bed
+
+    @bed.setter
+    def bed(self, value):
+        self._bed = value
+
+    @property
+    def nhs_number(self):
+        if self._nhs_number:
+            value = "".join(self._nhs_number.split())
+            return f"{value[:3]} {value[3:6]} {value[6:]}"
+        return
+
+    @nhs_number.setter
+    def nhs_number(self, value):
+        self._nhs_number = "".join(value.split())
 
     @hybrid_property
     def age(self) -> int:
@@ -71,13 +93,19 @@ class Patient(db.Model):
 
     @hybrid_property
     def list_name(self):
-        return f"{self.surname.upper()}, {self.forename}"
+        if self.surname and self.forename:
+            return f"{self.surname.upper()}, {self.forename.title()}"
+        elif self.surname and not self.forename:
+            return f"{self.surname.upper()}, Unknown"
+        elif not self.surname and self.forename:
+            return f"UNKNOWN, {self.forename.title()}"
+        return "UNKNOWN, Unknown"
 
     @hybrid_property
     def location(self):
-        location_attrs = [self.ward, self.room, self.bed]
+        location_attrs = [self.ward, self.room, self._bed]
         if all(location_attrs):
-            return Location(self.ward, self.room, self.bed)
+            return Location(self.ward, self.room, self._bed)
 
     @hybrid_property
     def patient_details(self) -> str:
@@ -300,5 +328,12 @@ class Location:
     def is_sideroom(self) -> bool:
         return "SR" in self.bed
 
+    def __eq__(self, other):
+        if isinstance(other, type(self)) and (
+            self.ward == other.ward and self.room == other.room and self.bed == other.bed
+        ):
+            return True
+        return False
+
     def __repr__(self):
-        return f"{self.__class__.__name__}(ward={self.ward.value}, bay={self.room})"
+        return f"{self.__class__.__name__}(ward={self.ward.value}, bay={self.room}, bed={self.bed})"

@@ -1,5 +1,6 @@
 import pytest
 
+from src.front_end import callbacks  # noqa required to avoid circular imports
 from src.list_generator.models import PatientList
 from src.shared_enums import Ward
 from src.shared_models import Patient

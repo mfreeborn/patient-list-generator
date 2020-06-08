@@ -83,7 +83,10 @@ def test_patient_details(patient):
 
 
 def test_patient_bed(patient):
-    patient.location = Location(Ward.GLOSSOP, "GLOBAY04", "BedE")
+    patient.ward = "Glossop"
+    patient.room = "Bay 04 GL"
+    patient.bed = "BedE"
+
     expected = "4E"
 
     assert patient.bed == expected
@@ -101,17 +104,22 @@ def test_merge_patients(patient):
         "ds": "no",
         "bloods": "7",
     }
-    location_1 = Location(Ward.GLOSSOP, "GLOBAY04", "BedE")
-    location_2 = Location(Ward.CAPENER, "CAPBAY02", "BedA")
+    new_location = {"ward": Ward.GLOSSOP, "room": "BAY 04 GL", "bed": "BedE"}
+    old_location = {"ward": Ward.CAPENER, "room": "BAY 02 CA", "bed": "2A"}
+    new_location_inst = Location(**new_location)
 
     # start with a patient just with the up to date details from CareFlow
     patient.forename = pt_dict["forename"]
     patient.surname = pt_dict["surname"]
     patient.dob = pt_dict["dob"]
-    patient.location = location_1
+
+    for attr, value in new_location.items():
+        setattr(patient, attr, value)
 
     # make the same patient, who is on the handover list, with all their jobs etc
-    patient2 = Patient("111 111 1111", location=location_2, **pt_dict)
+    patient2 = Patient(nhs_number="111 111 1111")
+    for attr, value in list(old_location.items()) + list(pt_dict.items()):
+        setattr(patient2, attr, value)
 
     # merge them together
     patient.merge(patient2)
@@ -121,7 +129,7 @@ def test_merge_patients(patient):
     for attr in pt_dict:
         assert getattr(patient, attr) == pt_dict[attr]
 
-    assert patient.location == location_1
+    assert patient.location == new_location_inst
 
 
 def test_merge_fails_with_diff_patients(patient):
@@ -136,17 +144,21 @@ def test_merge_fails_with_diff_patients(patient):
         "tta": "yes",
         "bloods": "7",
     }
-    location_1 = Location(Ward.GLOSSOP, "GLOBAY04", "BedE")
-    location_2 = Location(Ward.CAPENER, "CAPBAY02", "BedA")
+    new_location = {"ward": Ward.GLOSSOP, "room": "BAY 04 GL", "bed": "BedE"}
+    old_location = {"ward": Ward.CAPENER, "room": "BAY 02 CA", "bed": "2A"}
 
     # start with a patient just with the up to date details from CareFlow
     patient.forename = pt_dict["forename"]
     patient.surname = pt_dict["surname"]
     patient.dob = pt_dict["dob"]
-    patient.location = location_1
+
+    for attr, value in new_location.items():
+        setattr(patient, attr, value)
 
     # make a different patient, who is on the handover list, with all their jobs etc
-    patient2 = Patient("222 222 2222", location=location_2, **pt_dict)
+    patient2 = Patient("222 222 2222")
+    for attr, value in list(old_location.items()) + list(pt_dict.items()):
+        setattr(patient2, attr, value)
 
     # merge them together
     with pytest.raises(ValueError):

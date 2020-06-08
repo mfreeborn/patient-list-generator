@@ -2,10 +2,30 @@ import functools
 import logging
 import sys
 
+from sqlalchemy import Text
+from sqlalchemy.types import TypeDecorator
+
 from . import settings
 from .front_end.layouts.enums import Element as El
 
 logger = logging.getLogger()
+
+
+class NHSNumber(TypeDecorator):
+    """Store NHS numbers without spaces; return them with spaces."""
+
+    impl = Text
+
+    def process_bind_param(self, value, dialect):
+        if value:
+            return "".join(value.split())
+        return ""
+
+    def process_result_value(self, value, dialect):
+        if value:
+            value = "".join(value.split())
+            return f"{value[:3]} {value[3:6]} {value[6:]}"
+        return ""
 
 
 def build_team_file_path(team, date):
