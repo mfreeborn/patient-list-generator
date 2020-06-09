@@ -314,17 +314,17 @@ class Location:
         """Helper property for use as a sorting key to correctly sort patients in a list by bed.
 
         The main purpose is to correctly allow for "SR9" being a lower bed number than "SR10"
-        and to handle Fortescue's unique bed-naming convetion.
+        and to handle Fortescue's unique bed-naming convention.
         """
         if self.is_sideroom and self.ward != Ward.FORTESCUE:
             bed_num = int(self.bed.replace("SR", ""))
             return f"SR{bed_num:02d}"
         elif self.is_sideroom:
             # push side rooms to the bottom, but above discharge areas
-            return f"Y{self.bed}"
+            return f"ZA{self.bed}"
         elif self.bed == "DA":
             # and discharge areas right to the bottom
-            return "ZDA"
+            return "ZBDA"
         return self.bed
 
     @property
