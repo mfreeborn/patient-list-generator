@@ -316,6 +316,7 @@ class Location:
         The main purpose is to correctly allow for "SR9" being a lower bed number than "SR10"
         and to handle Fortescue's unique bed-naming convention.
         """
+        # TODO: sort Fortescue bays by their physical location, rather than alphabetically
         if self.is_sideroom and self.ward != Ward.FORTESCUE:
             bed_num = int(self.bed.replace("SR", ""))
             return f"SR{bed_num:02d}"
