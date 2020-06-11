@@ -6,24 +6,6 @@ from src.shared_enums import Ward
 from src.shared_models import Location, Patient
 
 
-def test_location_parse_beds(trakcare_bed_format):
-    for ward, tk_bay, tk_bed, list_bed in trakcare_bed_format:
-        assert Location(ward, tk_bay, tk_bed).bed == list_bed
-
-
-def test_location_is_sideroom():
-    locs = [
-        (Ward.FORTESCUE, "Yellow Room (FORT)", "Bed01", True),
-        (Ward.FORTESCUE, "Green (FORT)", "Bed03", False),
-        (Ward.GLOSSOP, "Bay 01 GL", "BedF", False),
-        (Ward.GLOSSOP, "Room 13 GL", "Bed01", True),
-    ]
-
-    for ward, cf_bay, cf_bed, is_sr in locs:
-        loc = Location(ward, cf_bay, cf_bed)
-        assert loc.is_sideroom == is_sr
-
-
 def test_patient_equality():
     pt_1 = Patient("111 111 1111")
     pt_2 = Patient("111 111 1111")

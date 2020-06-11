@@ -60,9 +60,20 @@ def trakcare_bed_format():
         (Ward.TARKA, "Room 04 TA", "Bed01", "SR4"),
         # Victoria
         (Ward.VICTORIA, "Bay 01 VIC", "BedA", "1A"),
-        (Ward.VICTORIA, "Room 11 VIC", "Bed01", "SR11"),
+        (Ward.VICTORIA, "Room 10 VIC", "Bed01", "SR10"),
         (Ward.VICTORIA, "Room 11 VIC", "Bed01", "SR11"),
         (Ward.VICTORIA, "Discharge Area VIC", None, "DA"),
+    ]
+
+
+@pytest.fixture
+def trakcare_sideroom_format():
+    # Ward, Trakcare room, Trakcare bed, bool(is_sideroom)
+    return [
+        (Ward.FORTESCUE, "Yellow Room (FORT)", "Bed01", True),
+        (Ward.FORTESCUE, "Green (FORT)", "Bed03", False),
+        (Ward.GLOSSOP, "Bay 01 GL", "BedF", False),
+        (Ward.GLOSSOP, "Room 13 GL", "Bed01", True),
     ]
 
 
