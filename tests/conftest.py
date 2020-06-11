@@ -13,7 +13,7 @@ def trakcare_bed_format():
         (Ward.ALEXANDRA, "Bay 3", "Bed F", "3F"),
         (Ward.ALEXANDRA, "Room 2", "Bed 1", "SR2"),
         # Caroline Thorpe
-        (Ward.CAROLINE_THORPE, "Bay 02 CT", "Bed01", "B2 B1"),
+        (Ward.CAROLINE_THORPE, "Bay 02 CT", "Bed01", "Bay 2 Bed 1"),
         (Ward.CAROLINE_THORPE, "Room 04 CT", "Bed01", "SR4"),
         # TODO: Childrens Admission Unit
         # TODO: HDU
@@ -25,7 +25,7 @@ def trakcare_bed_format():
         (Ward.DAY_SURGERY_UNIT, "DSU Bay 03", "BEDF", "3F"),
         (Ward.DAY_SURGERY_UNIT, "DSU Room 02", "BED01", "SR2"),
         # Fortescue
-        (Ward.FORTESCUE, "Yellow (FORT)", "Bed01", "Yell 1"),
+        (Ward.FORTESCUE, "Yellow (FORT)", "Bed01", "Yellow 1"),
         (Ward.FORTESCUE, "Green (FORT)", "Bed02", "Green 2"),
         (Ward.FORTESCUE, "Lilac (FORT)", "Bed03", "Lilac 3"),
         (Ward.FORTESCUE, "Blue (FORT)", "Bed04", "Blue 4"),

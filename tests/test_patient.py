@@ -103,6 +103,7 @@ def test_merge_patients(patient):
         "tta": "yes",
         "ds": "no",
         "bloods": "7",
+        "is_new": False,
     }
     new_location = {"ward": Ward.GLOSSOP, "room": "BAY 04 GL", "bed": "BedE"}
     old_location = {"ward": Ward.CAPENER, "room": "BAY 02 CA", "bed": "2A"}
