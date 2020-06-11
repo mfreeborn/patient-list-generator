@@ -294,15 +294,13 @@ class Location:
         if self.ward == Ward.FORTESCUE:
             bay_colour = room.split()[0]
             bed_number = int(self.number_pattern.search(bed)[0])
-            if bay_colour == "yellow":
-                bay_colour = "yell"
             return f"{bay_colour.title()} {bed_number}"
 
         # then sort out Caroline Thorpe bays
         if self.ward == Ward.CAROLINE_THORPE:
             bay_number = int(self.number_pattern.search(room)[0])
             bed_number = bed[-1]
-            return f"B{bay_number} B{bed_number}"
+            return f"Bay {bay_number} Bed {bed_number}"
 
         # this should then cover the rest of the beds
         bay_number = int(self.number_pattern.search(room)[0])
@@ -316,13 +314,31 @@ class Location:
         The main purpose is to correctly allow for "SR9" being a lower bed number than "SR10"
         and to handle Fortescue's unique bed-naming convention.
         """
-        # TODO: sort Fortescue bays by their physical location, rather than alphabetically
-        if self.is_sideroom and self.ward != Ward.FORTESCUE:
+        if self.ward == Ward.FORTESCUE:
+            # first, deal with Fortescue. The order of the bays matches the physical layout
+            # of the ward, rather than the alphabetical position of the bay colour
+            bay_order = {
+                "Green": 1,
+                "Yellow": 2,
+                "Lilac": 3,
+                "Blue": 4,
+                "Pink": 5,
+            }
+            if self.is_sideroom:
+                # siderooms forced to the bottom
+                room_colour = self.bed.split()[1]
+                return f"Z{bay_order[room_colour]}"
+            else:
+                # again, sort beds by physical bay location
+                bay_colour = self.bed.split()[0]
+                bed_number = self.bed.split()[1]
+                return f"{bay_order[bay_colour]}{bed_number}"
+
+        # handle the rest of the wards
+        if self.is_sideroom:
+            # 0-pad single digit room numbers (9 -> 09) so that SR9 is sorted after SR10
             bed_num = int(self.bed.replace("SR", ""))
             return f"SR{bed_num:02d}"
-        elif self.is_sideroom:
-            # push side rooms to the bottom, but above discharge areas
-            return f"ZA{self.bed}"
         elif self.bed == "DA":
             # and discharge areas right to the bottom
             return "ZBDA"
