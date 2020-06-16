@@ -6,7 +6,7 @@ from sqlalchemy import Text
 from sqlalchemy.types import TypeDecorator
 
 from . import settings
-from .front_end.layouts.enums import Element as El
+from .front_end.pages.enums import Element as El
 
 logger = logging.getLogger()
 

@@ -9,12 +9,12 @@ import dash_html_components as html
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
-from .. import utils
-from ..list_generator import generate_list
-from ..shared_enums import Team
-from .app import app
-from .layouts import pages
-from .layouts.enums import Element as El
+from .... import utils
+from ....list_generator import generate_list
+from ....shared_enums import Team
+from ...app import app
+from ... import pages
+from ...pages.enums import Element as El
 
 logger = logging.getLogger()
 

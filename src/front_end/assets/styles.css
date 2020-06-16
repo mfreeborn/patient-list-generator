@@ -20,6 +20,11 @@ body {
 
 /* HEADER BAR */
 
+.app-title {
+    text-align: center;
+    margin: 0;
+}
+
 .header-bar {
     background-color: #ecf0f1;
     margin: 0px;
@@ -27,9 +32,9 @@ body {
     padding-top: 15px;
 }
 
-.app-title {
-    text-align: center;
-    margin: 0;
+.version-string {
+    margin-bottom: 0;
+    text-align: end;
 }
 
 /* NAVIGATION TABS */

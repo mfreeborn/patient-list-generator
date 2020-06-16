@@ -2,8 +2,8 @@ import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 
-from .....shared_enums import Team
-from ...enums import Element as El
+from ....shared_enums import Team
+from ..enums import Element as El
 
 
 def make_team_select_stage():

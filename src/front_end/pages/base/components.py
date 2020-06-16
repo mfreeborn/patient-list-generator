@@ -1,12 +1,17 @@
 import dash_bootstrap_components as dbc
 import dash_html_components as html
 
-from .enums import Element as El
+from ....version import __version__
+from ..enums import Element as El
 
 
 def make_header_bar():
     return dbc.Row(
-        [dbc.Col(), dbc.Col(html.H3("Patient List Generator", className="app-title")), dbc.Col()],
+        [
+            dbc.Col(),
+            dbc.Col(html.H3("Patient List Generator", className="app-title")),
+            dbc.Col(html.P(f"v{__version__}", className="version-string")),
+        ],
         className="header-bar",
     )
 

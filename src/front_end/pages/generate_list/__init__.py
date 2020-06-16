@@ -1,7 +1,7 @@
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 
-from ...enums import Element as El
+from ..enums import Element as El
 from . import components
 
 GENERATE_LIST_LAYOUT = [
