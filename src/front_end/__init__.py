@@ -1,7 +1,7 @@
 from .. import settings
-from .pages.generate_list import callbacks  # noqa
 from .app import app
 from .pages.base import BASE_LAYOUT
+from .pages.generate_list import callbacks  # noqa
 
 app.layout = BASE_LAYOUT
 

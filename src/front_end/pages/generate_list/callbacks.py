@@ -12,8 +12,8 @@ from dash.exceptions import PreventUpdate
 from .... import utils
 from ....list_generator import generate_list
 from ....shared_enums import Team
-from ...app import app
 from ... import pages
+from ...app import app
 from ...pages.enums import Element as El
 
 logger = logging.getLogger()
