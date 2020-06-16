@@ -206,7 +206,8 @@ class HandoverTable:
 
             self.add_patient_row(patient)
             logger.debug("%r added to the table", patient)
-        else:
+
+        if not patients:
             logger.debug("No patients added to the table")
 
         # apply formatting to the newly updated table

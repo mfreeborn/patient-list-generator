@@ -13,7 +13,7 @@ def trakcare_bed_format():
         (Ward.ALEXANDRA, "Bay 3", "Bed F", "3F"),
         (Ward.ALEXANDRA, "Room 2", "Bed 1", "SR2"),
         # Caroline Thorpe
-        (Ward.CAROLINE_THORPE, "Bay 02 CT", "Bed01", "B2 B1"),
+        (Ward.CAROLINE_THORPE, "Bay 02 CT", "Bed01", "Bay 2 Bed 1"),
         (Ward.CAROLINE_THORPE, "Room 04 CT", "Bed01", "SR4"),
         # TODO: Childrens Admission Unit
         # TODO: HDU
@@ -25,7 +25,7 @@ def trakcare_bed_format():
         (Ward.DAY_SURGERY_UNIT, "DSU Bay 03", "BEDF", "3F"),
         (Ward.DAY_SURGERY_UNIT, "DSU Room 02", "BED01", "SR2"),
         # Fortescue
-        (Ward.FORTESCUE, "Yellow (FORT)", "Bed01", "Yell 1"),
+        (Ward.FORTESCUE, "Yellow (FORT)", "Bed01", "Yellow 1"),
         (Ward.FORTESCUE, "Green (FORT)", "Bed02", "Green 2"),
         (Ward.FORTESCUE, "Lilac (FORT)", "Bed03", "Lilac 3"),
         (Ward.FORTESCUE, "Blue (FORT)", "Bed04", "Blue 4"),
@@ -60,9 +60,20 @@ def trakcare_bed_format():
         (Ward.TARKA, "Room 04 TA", "Bed01", "SR4"),
         # Victoria
         (Ward.VICTORIA, "Bay 01 VIC", "BedA", "1A"),
-        (Ward.VICTORIA, "Room 11 VIC", "Bed01", "SR11"),
+        (Ward.VICTORIA, "Room 10 VIC", "Bed01", "SR10"),
         (Ward.VICTORIA, "Room 11 VIC", "Bed01", "SR11"),
         (Ward.VICTORIA, "Discharge Area VIC", None, "DA"),
+    ]
+
+
+@pytest.fixture
+def trakcare_sideroom_format():
+    # Ward, Trakcare room, Trakcare bed, bool(is_sideroom)
+    return [
+        (Ward.FORTESCUE, "Yellow Room (FORT)", "Bed01", True),
+        (Ward.FORTESCUE, "Green (FORT)", "Bed03", False),
+        (Ward.GLOSSOP, "Bay 01 GL", "BedF", False),
+        (Ward.GLOSSOP, "Room 13 GL", "Bed01", True),
     ]
 
 
