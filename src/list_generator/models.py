@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from typing import Union
 
 from docx import Document
@@ -227,12 +227,20 @@ class HandoverTable:
             tr = row._tr
             self._tbl.remove(tr)
 
+    def add_full_width_row(self):
+        new_row = self.add_row()
+        new_row.cells[0].merge(new_row.cells[-1])
+        return new_row
+
     def add_ward_header_row(self, ward: shared_enums.Ward) -> None:
-        ward_header_row = self.add_row()
-        ward_header_row.cells[0].merge(ward_header_row.cells[-1])
+        ward_header_row = self.add_full_width_row()
         ward_header_row.cells[0].text = ward.value
 
     def add_patient_row(self, patient: Patient) -> None:
+        if patient.is_birthday:
+            birthday_row = self.add_full_width_row()
+            birthday_row.cells[0].text = f"Happy birthday {patient.forename}! {patient.age} today!"
+
         new_patient_row = self.add_row()
         new_patient_row.patient = patient
 
@@ -251,7 +259,7 @@ class HandoverTable:
 
     def format(self) -> None:
         # center table within the page
-        self.alignment = WD_TABLE_ALIGNMENT.RIGHT
+        self.alignment = WD_TABLE_ALIGNMENT.CENTER
 
         # set column width for the patient details
         # 3cm is a good default width to fit dob and age on one line
@@ -277,9 +285,14 @@ class HandoverTable:
                 shading_elm = parse_xml(f'<w:shd {nsdecls("w")} w:fill="EEEEEE"/>')
                 for cell in row.cells:
                     cell._tc.get_or_add_tcPr().append(shading_elm)
-                    # keep this header row with on the same page as the next row
+                    # keep this header row on the same page as the next row
                     for paragraph in cell.paragraphs:
                         paragraph.paragraph_format.keep_with_next = True
+                if "birthday" in row.cells[0].text:
+                    for cell in row.cells:
+                        for para in cell.paragraphs:
+                            for run in para.runs:
+                                run.italic = True
 
             # format new patients as bold
             if row._index in self._new_patient_indices:

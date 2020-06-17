@@ -1,3 +1,4 @@
+import datetime
 from pathlib import Path
 
 import pytest
@@ -98,14 +99,27 @@ def empty_patient_list():
     return PatientList(home_ward=Ward.GLOSSOP)
 
 
-def add_patient_to_trak():
-    stmt = """
-    INSERT INTO vwPathologyCurrentInpatients (RegNumber, NHSNumber, Forename, Surname, AdmissionDate, DateOfBirth, Ward, Room, Bed, ReasonForAdmission, Consultant)
-    VALUES ('123456', '1234567899', 'John', 'Smith', '2020-06-15', '1956-05-14', 'Capener', 'Room 07 CA', 'Bed01', 'Unwell', 'Dr Alison Moody');
-    """  # noqa
+def add_patient_to_trak(**kwargs):
+    values = {
+        "RegNumber": "123456",  # probably randomise this with a uuid
+        "NHSNumber": "1234567899",
+        "Forename": "John",
+        "Surname": "Smith",
+        "AdmissionDate": datetime.date(2020, 6, 15),
+        "DateOfBirth": datetime.date(1956, 5, 14),
+        "Ward": "Capener",
+        "Room": "Room 07 CA",
+        "Bed": "Bed01",
+        "ReasonForAdmission": "Unwell",
+        "Consultant": "Dr Alison Moody",
+    }
+
+    values.update(kwargs)
+
+    stmt = Patient.__table__.insert()
 
     with db.engine.connect() as conn:
-        conn.execute(stmt)
+        conn.execute(stmt, values)
 
 
 def clear_db():
@@ -121,6 +135,6 @@ def get_footer_text(handover_list):
     return " ".join(paragraph.text for paragraph in handover_list.doc.sections[0].footer.paragraphs)
 
 
-def get_first_patient_row(handover_list):
+def get_last_patient_row(handover_list):
     table = handover_list._handover_table
-    return table.rows[2]  # skip header and ward name
+    return table.rows[-1]  # skip header and ward name

@@ -87,6 +87,17 @@ class Patient(db.Model):
         )
 
     @hybrid_property
+    def is_birthday(self):
+        if not self.dob:
+            return False
+
+        today = datetime.date.today()
+        birthday = self.dob.replace(year=today.year)
+        if today == birthday:
+            return True
+        return False
+
+    @hybrid_property
     def length_of_stay(self) -> int:
         """Return the integer number of days since admission."""
         return (datetime.date.today() - self.admission_date).days

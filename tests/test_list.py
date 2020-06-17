@@ -1,11 +1,12 @@
 import datetime
 
 from src.front_end.app import db
+from src.shared_models import Patient
 
 from .conftest import (
     add_patient_to_trak,
     clear_db,
-    get_first_patient_row,
+    get_last_patient_row,
     get_footer_text,
     get_header_text,
 )
@@ -63,7 +64,7 @@ def test_new_patient_is_bold(empty_list):
 
     empty_list.update()
 
-    row = get_first_patient_row(empty_list)
+    row = get_last_patient_row(empty_list)
 
     for cell in row.cells:
         for para in cell.paragraphs:
@@ -84,11 +85,43 @@ def test_old_patient_not_bold(empty_list):
     empty_list.patients = empty_list._parse_patients()
     empty_list.update()
 
-    row = get_first_patient_row(empty_list)
+    row = get_last_patient_row(empty_list)
 
     for cell in row.cells:
         for para in cell.paragraphs:
             for run in para.runs:
                 assert not run.bold
+
+    clear_db()
+
+
+def test_patient_birthday_row(empty_list):
+    # if it is a patient's birthday, the row above will be full width and have
+    # an short, italicised birthday message
+    add_patient_to_trak(DateOfBirth=datetime.date.today().replace(year=1950))
+    empty_list.update()
+    empty_list.doc.save("erm.docm")
+    row_above = empty_list._handover_table.rows[-2]
+
+    assert "birthday" in row_above.cells[0].text
+
+    for para in row_above.cells[0].paragraphs:
+        for run in para.runs:
+            assert run.italic
+
+    clear_db()
+
+
+def test_not_patient_birthday_row(empty_list):
+    today = datetime.date.today()
+    yesterday = today - datetime.timedelta(days=1)
+    add_patient_to_trak(DateOfBirth=yesterday.replace(year=1950))
+    empty_list.update()
+
+    empty_list.doc.save("erm.docm")
+
+    row_above = empty_list._handover_table.rows[-2]
+
+    assert "birthday" not in row_above.cells[0].text
 
     clear_db()
