@@ -12,6 +12,7 @@ logs/
 Logs/
 *.doc
 *.docm
+!tests/assets/*
 *.docx
 .env
 dist/
