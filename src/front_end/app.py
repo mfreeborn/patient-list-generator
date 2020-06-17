@@ -15,3 +15,9 @@ server.config["SQLALCHEMY_DATABASE_URI"] = settings.DB_URL
 server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(server)
+
+# set up the test database
+if settings.TESTING:
+    from .. import shared_models  # noqa
+
+    db.create_all()

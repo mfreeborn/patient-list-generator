@@ -5,10 +5,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-try:
-    DB_URL = os.environ["DB_URL"]
-except KeyError:
-    raise Exception("DB_URL environment variable is required")
+TESTING = os.environ.get("TESTING", "false").lower() == "true"
+if TESTING:
+    DB_URL = "sqlite://"
+else:
+    try:
+        DB_URL = os.environ["DB_URL"]
+    except KeyError:
+        raise Exception("DB_URL environment variable is required")
 
 try:
     LIST_ROOT_DIR = Path(os.environ["LIST_ROOT_DIR"])

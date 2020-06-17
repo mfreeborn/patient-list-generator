@@ -1,9 +1,20 @@
+from pathlib import Path
+
 import pytest
 
 from src.front_end import callbacks  # noqa required to avoid circular imports
-from src.list_generator.models import PatientList
-from src.shared_enums import Ward
+from src.list_generator.models import HandoverList, PatientList
+from src.shared_enums import Team, Ward
 from src.shared_models import Patient
+from src.front_end.app import db
+
+
+@pytest.fixture
+def empty_list():
+    team = Team.RESPIRATORY.value
+    file = Path(__file__).parent / "assets" / "empty_list.docm"
+    filename = "empty_list.docm"
+    return HandoverList(team, file, filename)
 
 
 @pytest.fixture
@@ -85,3 +96,31 @@ def patient():
 @pytest.fixture
 def empty_patient_list():
     return PatientList(home_ward=Ward.GLOSSOP)
+
+
+def add_patient_to_trak():
+    stmt = """
+    INSERT INTO vwPathologyCurrentInpatients (RegNumber, NHSNumber, Forename, Surname, AdmissionDate, DateOfBirth, Ward, Room, Bed, ReasonForAdmission, Consultant)
+    VALUES ('123456', '1234567899', 'John', 'Smith', '2020-06-15', '1956-05-14', 'Capener', 'Room 07 CA', 'Bed01', 'Unwell', 'Dr Alison Moody');
+    """  # noqa
+
+    with db.engine.connect() as conn:
+        conn.execute(stmt)
+
+
+def clear_db():
+    Patient.query.delete()
+    db.session.commit()
+
+
+def get_header_text(handover_list):
+    return " ".join(paragraph.text for paragraph in handover_list.doc.sections[0].header.paragraphs)
+
+
+def get_footer_text(handover_list):
+    return " ".join(paragraph.text for paragraph in handover_list.doc.sections[0].footer.paragraphs)
+
+
+def get_first_patient_row(handover_list):
+    table = handover_list._handover_table
+    return table.rows[2]  # skip header and ward name

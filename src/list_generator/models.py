@@ -20,7 +20,7 @@ logger = logging.getLogger()
 
 
 class HandoverList:
-    """The primary object representing the Word document continaing the team's list of patients."""
+    """The primary object representing the Word document containing the team's list of patients."""
 
     def __init__(self, team, file, filename):
         logger.debug("Instantiating HandoverList for %r using '%s' as a base list", team, filename)
@@ -178,6 +178,13 @@ class HandoverList:
         self._update_patients()
         self._update_handover_table()
         self._update_list_metadata()
+
+    def __repr__(self):
+        return (
+            f"<{self.__class__.__name__}("
+            f"team={self.team}, total_patient_count={self.total_patient_count}"
+            f")>"
+        )
 
 
 class HandoverTable:
