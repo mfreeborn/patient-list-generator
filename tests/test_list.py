@@ -1,7 +1,6 @@
 import datetime
 
 from src.front_end.app import db
-from src.shared_models import Patient
 
 from .conftest import (
     add_patient_to_trak,
@@ -100,7 +99,7 @@ def test_patient_birthday_row(empty_list):
     # an short, italicised birthday message
     add_patient_to_trak(DateOfBirth=datetime.date.today().replace(year=1950))
     empty_list.update()
-    empty_list.doc.save("erm.docm")
+
     row_above = empty_list._handover_table.rows[-2]
 
     assert "birthday" in row_above.cells[0].text
@@ -117,8 +116,6 @@ def test_not_patient_birthday_row(empty_list):
     yesterday = today - datetime.timedelta(days=1)
     add_patient_to_trak(DateOfBirth=yesterday.replace(year=1950))
     empty_list.update()
-
-    empty_list.doc.save("erm.docm")
 
     row_above = empty_list._handover_table.rows[-2]
 
