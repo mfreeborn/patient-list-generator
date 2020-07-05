@@ -210,7 +210,7 @@ def handle_generate_list(n_clicks, selected_team, uploaded_file_data, detected_l
         filename = Path(uploaded_file_data["filename"])
     else:
         # otherwise fallback to the auto-detected file
-        app.logger.info("Will use the auto-detected file as a base for the updated handoiver list")
+        app.logger.info("Will use the auto-detected file as a base for the updated handover list")
         filename = Path(detected_list_filename)
         list_date = datetime.datetime.strptime(detected_list_filename.split("_")[0], "%d-%m-%Y")
         input_file_path = utils.build_team_file_path(team, list_date) / filename
