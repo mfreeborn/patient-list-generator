@@ -39,10 +39,10 @@ class Patient(db.Model):
         self,
         nhs_number=None,
         reason_for_admission=None,
+        progress=None,
         jobs=None,
         edd=None,
-        ds=None,
-        tta=None,
+        tta_ds=None,
         bloods=None,
     ):
         # __init__ is /not/ called when SQLAlchemy loads an row from the database. This
@@ -50,10 +50,10 @@ class Patient(db.Model):
         nhs_number = nhs_number or ""
         self.nhs_number = "".join(nhs_number.split())
         self.reason_for_admission = reason_for_admission or ""
+        self.progress = progress or ""
         self.jobs = jobs or ""
         self.edd = edd or ""
-        self.ds = ds or ""
-        self.tta = tta or ""
+        self.tta_ds = tta_ds or ""
         self.bloods = bloods or ""
 
     @property
@@ -190,7 +190,13 @@ class Patient(db.Model):
 
         Expects the row to be in the following format:
 
-            Bed | Patient Details | Issues | Jobs | EDD | DS | TTA | Blds
+            Bed | Patient Details | Issues | Inpatient Progress | Jobs | EDD | TTA/DS | Blds
+
+        NOTE:
+        Although we assume the above column headers, the only ones that this program actually
+        overwrites are Bed, Patient Details and, when adding a "new" patient, Issues. The only
+        requirement thereafter is for there to be 8 columns in total. As such, the names of
+        columns[3:] don't actually need to match with the variable names allocated below.
 
         The "Patient Details" cell needs to be something like the following format:
 
@@ -218,19 +224,19 @@ class Patient(db.Model):
             nhs_number = nhs_number[0]
 
         issues = row.cells[2].text.strip()
-        jobs = row.cells[3].text.strip()
-        edd = row.cells[4].text.strip()
-        ds = row.cells[5].text.strip()
-        tta = row.cells[6].text.strip()
+        progress = row.cells[3].text.strip()
+        jobs = row.cells[4].text.strip()
+        edd = row.cells[5].text.strip()
+        tta_ds = row.cells[6].text.strip()
         bloods = row.cells[7].text.strip()
 
         patient = cls(
             nhs_number=nhs_number,
             reason_for_admission=issues,
+            progress=progress,
             jobs=jobs,
             edd=edd,
-            ds=ds,
-            tta=tta,
+            tta_ds=tta_ds,
             bloods=bloods,
         )
 
@@ -254,7 +260,15 @@ class Patient(db.Model):
         if self != other_patient:
             raise ValueError
 
-        attrs_to_merge = ["reason_for_admission", "jobs", "edd", "ds", "tta", "bloods", "is_new"]
+        attrs_to_merge = [
+            "reason_for_admission",
+            "progress",
+            "jobs",
+            "edd",
+            "tta_ds",
+            "bloods",
+            "is_new",
+        ]
 
         for attr in attrs_to_merge:
             other_pt_attr = getattr(other_patient, attr)

@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from datetime import date, datetime, timedelta
+from datetime import datetime
 from typing import Union
 
 from docx import Document
@@ -249,10 +249,10 @@ class HandoverTable:
         new_patient_row.cells[2].text = patient.reason_for_admission or ""
         if not patient.is_new:
             # new patients won't have any of these attributes on them
-            new_patient_row.cells[3].text = patient.jobs
-            new_patient_row.cells[4].text = patient.edd
-            new_patient_row.cells[5].text = patient.ds
-            new_patient_row.cells[6].text = patient.tta
+            new_patient_row.cells[3].text = patient.progress
+            new_patient_row.cells[4].text = patient.jobs
+            new_patient_row.cells[5].text = patient.edd
+            new_patient_row.cells[6].text = patient.tta_ds
             new_patient_row.cells[7].text = patient.bloods
         else:
             self._new_patient_indices.add(new_patient_row._index)
