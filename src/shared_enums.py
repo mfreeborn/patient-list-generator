@@ -117,7 +117,7 @@ class Team(Enum):
     RESPIRATORY = TeamModel(
         name=TeamName.RESPIRATORY,
         consultants=[Consultant.ALISON_MOODY, Consultant.GEORGE_HANDS, Consultant.JAREER_RAZA],
-        home_ward=Ward.CAPENER,
+        home_ward=Ward.TARKA,
     )
 
     STROKE = TeamModel(
