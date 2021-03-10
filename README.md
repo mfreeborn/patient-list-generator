@@ -26,7 +26,7 @@ Several things have happened:
 - Simple formatting has been applied to the table header
 - Ward-based headers have been applied to make it clearer where patients are
 
-And now the list is accurate, up to date and visually easy to read - in a fraction of the time it would take a person to do in reality.
+And now the list is accurate, up to date and visually easy to read - in a fraction of the time it would take a person to do manually.
 
 ## Context
 
