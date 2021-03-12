@@ -14,10 +14,12 @@ class Patient(db.Model):
     """Database table representing a live view of inpatients at NDDH from TrakCare."""
 
     __tablename__ = "vwPathologyCurrentInpatients"
-    nhs_num_pattern = re.compile(r"((?<=\s|\))|^)(\d{3}[ \t]*\d{3}[ \t]*\d{4})(\s+|)", flags=re.M)
+    patient_id_pattern = re.compile(
+        r"(?:((?<=\s|\))|^)(\d{3}[ \t]*\d{3}[ \t]*\d{4})(\s+|)|\d{7})", flags=re.M
+    )
 
     reg_number = db.Column("RegNumber", db.Text(), primary_key=True)
-    _nhs_number = db.Column("NHSNumber", utils.NHSNumber())
+    _nhs_number = db.Column("NHSNumber", utils.NHSNumber(), default="")
     forename = db.Column("Forename", db.Text())
     surname = db.Column("Surname", db.Text())
     admission_date = db.Column("AdmissionDate", db.Date)
@@ -37,7 +39,7 @@ class Patient(db.Model):
 
     def __init__(
         self,
-        nhs_number=None,
+        patient_id,
         reason_for_admission=None,
         progress=None,
         jobs=None,
@@ -47,14 +49,31 @@ class Patient(db.Model):
     ):
         # __init__ is /not/ called when SQLAlchemy loads an row from the database. This
         # method is just for when we create Patient objects in from_table_row
-        nhs_number = nhs_number or ""
-        self.nhs_number = "".join(nhs_number.split())
+        self.patient_id = "".join(patient_id.split())
         self.reason_for_admission = reason_for_admission or ""
         self.progress = progress or ""
         self.jobs = jobs or ""
         self.edd = edd or ""
         self.tta_ds = tta_ds or ""
         self.bloods = bloods or ""
+
+    @property
+    def patient_id(self):
+        """Return the patient ID which is preferably the NHS number or falls back to reg_number."""
+        # reg_number is never None, so it is valid to use it as a fallback
+        return self.nhs_number or self.reg_number
+
+    @patient_id.setter
+    def patient_id(self, patient_id: str):
+        # patient_id is one either the NHS number or the Trak registration number. They can be
+        # differentiated by their length: NHS numbers are 10 digits long, whilst Trak numbers
+        # are 7 characters long
+        if len(patient_id) == 10:
+            self.nhs_number = patient_id
+        elif len(patient_id) == 7:
+            self.reg_number = patient_id
+        else:
+            raise ValueError("Patient ID not recognised!")
 
     @property
     def bed(self):
@@ -70,11 +89,13 @@ class Patient(db.Model):
         if self._nhs_number:
             value = "".join(self._nhs_number.split())
             return f"{value[:3]} {value[3:6]} {value[6:]}"
-        return
+        return ""
 
     @nhs_number.setter
     def nhs_number(self, value):
-        self._nhs_number = "".join(value.split())
+        if value:
+            value = "".join(value.split())
+        self._nhs_number = value
 
     @hybrid_property
     def age(self) -> int:
@@ -121,10 +142,9 @@ class Patient(db.Model):
     @hybrid_property
     def patient_details(self) -> str:
         """Return the patient detail's in the correct format for the patient list."""
-        if not all([self.surname, self.forename, self.dob, self.nhs_number]):
-            return "UNKNOWN"
-
-        return f"{self.list_name}\n" f"{self.dob:%d/%m/%Y} ({self.age} Yrs)\n" f"{self.nhs_number}"
+        # default to NHS number, but fall back to Trak reg number
+        patient_id = self.nhs_number or self.reg_number
+        return f"{self.list_name}\n" f"{self.dob:%d/%m/%Y} ({self.age} Yrs)\n" f"{patient_id}"
 
     @hybrid_property
     def reason_for_admission(self):
@@ -209,19 +229,18 @@ class Patient(db.Model):
         formatted list as possible in order to minimise parsing errors when
         trying to extract a patient from the Word list.
         """
-
         patient_details = row.cells[1].text.strip()
-        nhs_number = cls.nhs_num_pattern.search(patient_details)
+        patient_id = cls.patient_id_pattern.search(patient_details)
 
-        if nhs_number is None:
+        if patient_id is None:
             # no match found by the regex
             raise ValueError(
                 f"No NHS number found in the table "
-                f"cell with the following contents: {patient_details}"
+                f"cell with the following contents:\n{patient_details}"
             )
         else:
             # retrieves the NHS number from the successful regex match
-            nhs_number = nhs_number[0]
+            patient_id = patient_id[0]
 
         issues = row.cells[2].text.strip()
         progress = row.cells[3].text.strip()
@@ -231,7 +250,7 @@ class Patient(db.Model):
         bloods = row.cells[7].text.strip()
 
         patient = cls(
-            nhs_number=nhs_number,
+            patient_id=patient_id,
             reason_for_admission=issues,
             progress=progress,
             jobs=jobs,
@@ -275,15 +294,15 @@ class Patient(db.Model):
             setattr(self, attr, other_pt_attr)
 
     def __eq__(self, other):
-        return isinstance(other, type(self)) and self.nhs_number == other.nhs_number
+        return isinstance(other, type(self)) and self.patient_id == other.patient_id
 
     def __repr__(self):
         cls_name = self.__class__.__name__
-        pt = f"<{cls_name}(name={self.list_name}, nhs_number={self.nhs_number})>"
+        pt = f"<{cls_name}(name={self.list_name}, patient_id={self.patient_id})>"
         if self.location is None:
             return pt
         return (
-            f"<{cls_name}(name={self.list_name}, nhs_number={self.nhs_number}, "
+            f"<{cls_name}(name={self.list_name}, patient_id={self.patient_id}, "
             f"location=Location(ward={self.location.ward.value}, bed={self.location.bed}))>"
         )
 

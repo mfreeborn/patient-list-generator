@@ -52,14 +52,19 @@ def test_patient_name(patient):
 
 
 def test_patient_details(patient):
-    expected = "UNKNOWN"
-    assert patient.patient_details == expected
-
+    # populate the standard patient details fields
     patient.dob = date.today()
     patient.forename = "Mark"
     patient.surname = "Allen"
 
     expected = f"ALLEN, Mark\n{date.today():%d/%m/%Y} (0 Yrs)\n111 111 1111"
+
+    assert patient.patient_details == expected
+
+    # test for patients with no NHS number (but they will have a Trak number)
+    patient.nhs_number = ""
+    patient.reg_number = "123456"
+    expected = f"ALLEN, Mark\n{date.today():%d/%m/%Y} (0 Yrs)\n123456"
 
     assert patient.patient_details == expected
 
@@ -82,8 +87,7 @@ def test_merge_patients(patient):
         "reason_for_admission": "Aspiration pneumonia",
         "jobs": "Chase CXR",
         "edd": "Wed",
-        "tta": "yes",
-        "ds": "no",
+        "tta_ds": "Both done",
         "bloods": "7",
         "is_new": False,
     }
@@ -91,7 +95,7 @@ def test_merge_patients(patient):
     old_location = {"ward": Ward.CAPENER, "room": "BAY 02 CA", "bed": "2A"}
     new_location_inst = Location(**new_location)
 
-    # start with a patient just with the up to date details from CareFlow
+    # start with a patient just with the up to date details from TrakCare
     patient.forename = pt_dict["forename"]
     patient.surname = pt_dict["surname"]
     patient.dob = pt_dict["dob"]
@@ -100,7 +104,7 @@ def test_merge_patients(patient):
         setattr(patient, attr, value)
 
     # make the same patient, who is on the handover list, with all their jobs etc
-    patient2 = Patient(nhs_number="111 111 1111")
+    patient2 = Patient(patient_id="111 111 1111")
     for attr, value in list(old_location.items()) + list(pt_dict.items()):
         setattr(patient2, attr, value)
 
@@ -108,7 +112,7 @@ def test_merge_patients(patient):
     patient.merge(patient2)
 
     # ensure that the resulting patient has all of the attributes taken from the handover list
-    # but is also in the up to date location according to CareFlow
+    # but is also in the up to date location according to TrakCare
     for attr in pt_dict:
         assert getattr(patient, attr) == pt_dict[attr]
 
@@ -185,7 +189,37 @@ def test_parse_nhs_number_from_table_cell():
         ]
 
         pt = Patient.from_table_row(MockRow(row))
-        assert pt.nhs_number == "111 111 1111"
+        print(pt_details)
+        print(pt)
+        assert pt.patient_id == "111 111 1111"
+
+
+def test_parse_reg_number_from_table_cell():
+    class MockCell:
+        def __init__(self, contents):
+            self.text = contents
+
+    class MockRow:
+        def __init__(self, row):
+            self.cells = [MockCell(text) for text in row]
+
+    pt_details = f"ALLEN, Mark\n{date.today():%d/%m/%Y} (0 Yrs)\n0123456"
+    row = MockRow(
+        [
+            "1A",  # location
+            f"{pt_details}",  # patient details
+            "Aspiration pneumonia",  # reason for admission
+            "Chase CXR",  # jobs
+            "Wed",  # edd
+            "no",  # ds
+            "yes",  # tta
+            "7",  # bloods
+        ]
+    )
+
+    pt = Patient.from_table_row(row)
+
+    assert pt.patient_id == "0123456"
 
 
 def test_patient_from_table_row():
@@ -201,10 +235,10 @@ def test_patient_from_table_row():
         "1A",  # location
         f"ALLEN, Mark\n{date.today():%d/%m/%Y} (0 Yrs)\n111 111 1111",  # patient details
         "Aspiration pneumonia",  # reason for admission
+        "Settling",  # inpatient progress
         "Chase CXR",  # jobs
         "Wed",  # edd
-        "no",  # ds
-        "yes",  # tta
+        "Both done",  # tta_ds
         "7",  # bloods
     ]
 
@@ -214,8 +248,7 @@ def test_patient_from_table_row():
         "reason_for_admission": "Aspiration pneumonia",
         "jobs": "Chase CXR",
         "edd": "Wed",
-        "ds": "no",
-        "tta": "yes",
+        "tta_ds": "Both done",
         "bloods": "7",
     }
 
